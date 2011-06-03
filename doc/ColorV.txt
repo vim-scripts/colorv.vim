@@ -1,6 +1,6 @@
 *ColorV.txt*               ColorV        Color Viewer for Vim
 
-ver:1.3.0                               <Rykka.Krin@gmail.com>
+ver:1.4.0                               <Rykka.Krin@gmail.com>
 
 CONTENTS                               *colorv-contents*
 
@@ -18,7 +18,10 @@ CONTENTS                               *colorv-contents*
 12. License                             |colorv-license|
 13. History                             |colorv-history|
 ==============================================================================
-NEW!(1.2.0)  Color name (W3C Standard) Support.
+VERSION                                             *colorv-version*
+- NEW!(1.4.0)  'mid' mode by default. Tips now echo in CmdLine.
+- NEW!(1.3.0)  Color name (X11 Standard) Support.
+- NEW!(1.2.0)  Color name (W3C Standard) Support.
 ------------------------------------------------------------------------------
 INTRO                                               *colorv-intro*
 
@@ -46,9 +49,9 @@ INTRO                                               *colorv-intro*
     See detail in help docs.
 
     Have a closer look at it. 
-    http://flic.kr/p/9LuPxG
+    http://flic.kr/p/9PVEE3
     or 
-    http://i55.tinypic.com/330ryhl.jpg
+    http://i52.tinypic.com/119qz3d.jpg
 
     If useful, please rate it
     http://www.vim.org/scripts/script.php?script_id=3597
@@ -198,7 +201,12 @@ current color. You can use |g:ColorV_show_star| to set it show or not.
     Except, no main pallet.
     Instead, a Saturation line and a Value line.
 
-
+                                                *colorv-interface-colorname*
+    If there is a color name for current HEX, it's name will show
+    in the right top of ColorV window. It's always W3C standard name.
+    In mini mode it is showing under the second line (Value line), 
+    use ctrl-A to see it.
+    See |colorv-colorname| for details.
 ==============================================================================
 COMMANDS                                            *colorv-commands*
 
@@ -310,30 +318,36 @@ which was used with cut/copy between other applications.
                                                     *colorv-colorname*
     The colorname are the the name of the colors, like 'red', 'green', 
     'blue', 'OrangeRed', 'cornsilk'
-
+    
     If not the exact hex of colors, then add '~' and '~~' to the end,
     the approximation rate to exact colors can be adjusted by
     |g:ColorV_name_approx|
+
+    There are several color names that have the same Hex.
+        Aqua            #00ffff
+        Cyan            #00ffff
+        Magenta         #ff00ff
+        Fuchsia         #ff00ff
 
     Note 
     The X11 standard is used by vim gui colors and X Window system.
     The W3C standard is mostly used in HTML/CSS and browsers.
 
-    There are several clash between X11 and W3C
-    Gray    (X11)	#BEBEBE
-    Gray    (W3C) 	#7F7F7F
-    Green   (X11) 	#00FF00
-    Green   (W3C) 	#007F00
-    Maroon  (X11) 	#B03060
-    Maroon  (W3C) 	#7F0000
-    Purple  (X11) 	#A020F0
-    Purple  (W3C) 	#7F007F
+    There are several clash between X11 and W3C colornames.
+        Gray    (X11)	#BEBEBE
+        Gray    (W3C) 	#7F7F7F
+        Green   (X11) 	#00FF00
+        Green   (W3C) 	#007F00
+        Maroon  (X11) 	#B03060
+        Maroon  (W3C) 	#7F0000
+        Purple  (X11) 	#A020F0
+        Purple  (W3C) 	#7F007F
     You can get the name table from
     http://en.wikipedia.org/wiki/X11_color_names
-
-    By default, when use |:ColorVword| and |:ColorVchange| in a vim filetype
-    files, the ColorV will automatically use X11 color names. 
-    And the name showing in ColorV window is always W3C color name.
+    
+    By default, when useing |:ColorVword| and |:ColorVchange| in vim filetype
+    files, ColorV will automatically use X11 color names. 
+    But the name showing in ColorV window is always W3C color name.
     You can entering a X11 name by 'nx' and W3C name by 'ne'.
 
                                                     *colorv-mapping-paste*
@@ -358,6 +372,9 @@ which was used with cut/copy between other applications.
     <2-Space>       Choose current showing colors under cursor.
     <2-Leftmouse>   Choose current showing colors under cursor.
 
+                                                    *colorv-mapping-text*
+    <C-A>/A         Show text. It is a mapping of 'ggVG'.
+    
                                                     *colorv-mapping-help*
     ?           Toggle tips showing.
     H/<F1>      Show this help documents.
@@ -398,13 +415,9 @@ OPTIONS                                             *colorv-options*
                                 color on the hue-line
 
                                                 *g:ColorV_show_tips*
-                                                (default=2)
+                                                (default=1)
     g:ColorV_show_tips      Show tips in normal and mini window.
-                            will show tip mark(?) if set to 2.
-
-                                                *g:ColorV_show_quit*
-                                                (default=0)
-    g:ColorV_show_quit      Show Quit mark if set to 1.
+                            will show tip mark(?) if set to 1.
 
                                                 *g:ColorV_show_star*
                                                 (default=1)
@@ -420,6 +433,12 @@ OPTIONS                                             *colorv-options*
                                                 (default=5)
     g:ColorV_name_approx    Approximation rate to the exact color of color
                             name.
+                                                *g:ColorV_echo_tips*
+                                                (default=0)
+    g:ColorV_echo_tips      The method of echo tips. set 0 to echo all.
+                            set 1 to echo with sequence.
+                            set 2 to echo with random sequence.
+                            
 ------------------------------------------------------------------------------
 VARIABLES                                           *colorv-variables*
 
@@ -458,17 +477,17 @@ EXAMPLE                                             *colorv-example*
     nmap <leader>cgw :ColorVchange<CR>
     
     "dynamci hue
-    "let g:ColorV_dynamic_hueline=1
-    "let g:ColorV_dynamic_hueline_step=9
+    "let g:ColorV_dynamic_hue=1
+    "let g:ColorV_dynamic_hue_step=9
 
     "Keep It Simple and Silent
     let g:ColorV_show_tips=0
-    let g:ColorV_show_quit=0
+    "let g:ColorV_echo_tips=1
     let g:ColorV_show_star=1
     let g:ColorV_word_mini=1
     let g:ColorV_silent_set=1
     
-    "set and copy to "+
+    "copy to "+ each time set colors
     "let g:ColorV_set_register=2
     "colorname approximate ratio
     "let g:ColorV_name_approx=10
@@ -518,7 +537,7 @@ DEPENDENCIES                                        *colorv-dependencies*
 LIMITATIONS                                         *colorv-limitations*
 
     - Eyedropper only support with pygtk2.0. 
-      When you don't have one. Please use your eye to drop colors.
+      When you don't got that. Please use your eye to drop colors.
     - Term/cterm not supported. Run it in gui mode, or use a color dislay.
     - Bugs. Please submit if you catch some.
 ==============================================================================
@@ -576,6 +595,19 @@ LICENSE                                             *colorv-license*
     }}}
 ==============================================================================
 HISTORY                                             *colorv-history*
+" 1.5.0
+" TODO: use '+' and '-' to add/subtract parameter. 
+" TODO: don't put duplicated color into history 
+" 1.4.0
+"FIXED: 110603  s:echo() will escape with '"'
+"FIXED: 110603  using option name g:ColorV_dynamic_hue 
+" DONE: 110602  colorname interface description. ctrl-a to show texts.
+"FIXED: 110602  rmv quit mark.rmv g:ColorV_show_quit. fix silent_set
+" DONE: 110602  change tip text. add g:ColorV_echo_tips (0/1/2)
+" DONE: 110602  change arrow_ptn color to reverse.
+" DONE: 110602  fix the pallet. no black line and white column now. 
+" DONE: 110602  add max/mid/min mode. default is mid mode
+" DONE: 110602  tips only shows in cmdline now
 
 " 1.3.0
 " DONE: 110601  X11 standard colorname support and used with &ft==vim

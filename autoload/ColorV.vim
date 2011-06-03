@@ -4,8 +4,8 @@
 " Summary: A color manager with color toolkits
 "  Author: Rykka.Krin <rykka.krin@gmail.com>
 "    Home: 
-" Version: 1.3.0 
-" Last Update: 2011-06-01
+" Version: 1.4.0 
+" Last Update: 2011-06-03
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:save_cpo = &cpo
 set cpo&vim
@@ -18,15 +18,11 @@ endif
 let g:colorV_loaded = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "SVAR: {{{
-"s:mode ()
-" TODO: add s:mode max mid min
-let s:mode= exists("s:mode") ? s:mode : "normal"
+let s:mode= exists("s:mode") ? s:mode : "max"
 let [s:pal_W,s:pal_H]=[20,10]
 let [s:poff_x,s:poff_y]=[0,1]
-let [s:max,s:mid,s:min]=[s:pal_H+1,6,1]
-let s:norm_height=s:pal_H+1
-let s:mini_height=3
-let s:mid_height=6
+let [s:max_h,s:mid_h,s:min_h]=[11,6,3]
+
 let s:hue_width=30
 let s:sat_width=30
 let s:val_width=30
@@ -41,10 +37,15 @@ let s:mini_pos=[["Hex:",1,42,11],
     \["H:",1,32,5],["S:",2,32,5],["V:",3,32,5]
     \]
 let s:tips_list=[
-            \'Choose:2-Click/2-Space',
-            \'Toggle:TAB     Edit:Enter',
-            \"Yank:yy/yr...  Paste:^V/p",
-            \"Help:F1/H      Quit:q/Q/^Wq",
+            \'Choose: 2-Click/2-Space/Ctrl-K/Ctrl-J',
+            \'Toggle: <TAB>/<C-N>/J   Back: <S-TAB>/<C-P>/K',
+            \'Goto Parameter: x/r/gg/b/u/s/v ',
+            \'Edit Parameter: Enter/a/i',
+            \'Colorname(W3C): na/ne      (X11):nx',
+            \'Yank(reg"): yy/yr/ys/yn/... (reg+): cc/cr/cs/cn/...',
+            \'Paste: <C-V>/p',
+            \'Help: F1/H               Tips: ?',
+            \'Quit: q/Q/<C-W>q/<C-W><C-Q>',
             \]
 let s:fmt={}
 let s:fmt.RGB='rgb(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3})'
@@ -55,7 +56,6 @@ let s:fmt.HEX='\x\@<!\x\{6}\x\@!'
 "#fff only
 let s:fmt.HEX3='#\zs\x\{3}\x\@!'
 let s:t='fghDPijmrYFGtudBevwxklyzEIZOJLMnHsaKbcopqNACQRSTUVWX'
-" TODO: use X11 in *.vim
 "X11 Standard
 let s:clrnX11=[['Gray', 'BEBEBE'], ['Green', '00FF00']
             \, ['Maroon', 'B03060'], ['Purple', 'A020F0']]
@@ -137,6 +137,7 @@ let s:aprx_rate=5
 let s:aprx_name=exists("g:ColorV_name_approx") ? g:ColorV_name_approx :
             \ s:aprx_rate
 let s:clrf=[   ['ff0000', '00ff00', '0000ff', 'Uryyb Jbeyq']
+            \, ['0000ff', '00ff00', 'ff0000', 'qyebj byyrU']
             \, ['000000', 'c00000', '009a00', 'Nstunavfgna~']
             \, ['370095', 'FCE015', 'D81B3E', 'Naqbeen~']
             \, ['00257E', 'FFC725', '00257E', 'Oneonqbf~']
@@ -258,31 +259,116 @@ endfunction "}}}
 "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "HELP: "{{{
-function! s:roll(min,max)
-    let s:seed=exists("s:seed") ? s: seed : str2nr(strftime("%S"))*17+3
+function! s:all_echo(txt_list) "{{{
+    let txt_list=a:txt_list
+    call s:caution("[Tips of Keyboard Shortcuts]")
+    let idx=0
+    for txt in txt_list
+        echo "[".idx."]" txt
+        let idx+=1
+    endfor
+endfunction "}}}
+function! s:rnd_echo(txt_list) "{{{
+    let txt_list=a:txt_list
+    let idx=0
+    let rnd=s:roll(0,len(txt_list)-1)
+    for txt in txt_list
+    	if  rnd == idx
+            echo "[".idx."]" txt
+            break
+        endif
+        let idx+=1
+    endfor
+endfunction "}}}
+function! s:seq_echo(txt_list) "{{{
+    let txt_list=a:txt_list
+    let s:seq_num= exists("s:seq_num") ? s:seq_num : 0
+    let idx=0
+    for txt in txt_list
+        if fmod(s:seq_num,len(txt_list)) == idx
+            echo "[".idx."]" txt
+            break
+        endif
+        let idx+=1
+    endfor
+    let s:seq_num+=1
+endfunction "}}}
+function! s:caution(msg) "{{{
+    echohl Modemsg
+    exe "echom \"[ColorV] ".escape(a:msg,'"')."\""
+    echohl Normal
+endfunction "}}}
+function! s:warning(msg) "{{{
+    echohl Warningmsg
+    exe "echom \"[ColorV] ".escape(a:msg,'"')."\""
+    echohl Normal
+endfunction "}}}
+function! s:echo(msg) "{{{
+    if g:ColorV_silent_set==0
+        exe "echom \"[ColorV] ".escape(a:msg,'"')."\""
+    else
+    	echom ""
+    endif
+endfunction "}}}
+
+function! s:roll(min,max) "{{{
+    let init= str2nr(strftime("%S%m"))*9+
+             \str2nr(strftime("%Y"))*3+
+             \str2nr(strftime("%M%S"))*5+
+             \str2nr(strftime("%H%d"))*1+19
+    let s:seed=exists("s:seed") ? s:seed : init
     let s:seed=fmod((20907*s:seed+17343),104530)
     return fmod(s:seed,a:max-a:min+1)+a:min
-endfunction
+endfunction "}}}
+function! s:approx2(hex1,hex2,...) "{{{
+    let [h1,s1,v1] = ColorV#rgb2hsv(ColorV#hex2rgb(a:hex1))
+    let [h2,s2,v2] = ColorV#rgb2hsv(ColorV#hex2rgb(a:hex2))
+    let r=exists("a:1") ? a:1 : s:aprx_rate
+    if h2+r>=h1 && h1>=h2-r && s2+r>=s1 && s1>=s2-r
+                \&& v2+r>=v1 && v1>=v2-r
+    	return 1
+    else
+    	return 0
+    endif
+
+endfunction "}}}
+
+function! s:update_global(hex) "{{{
+    let hex= strpart(printf("%06x",'0x'.a:hex),0,6) 
+    let g:ColorV.HEX=hex
+    let [r,g,b]= ColorV#hex2rgb(hex)
+    let [h,s,v]= ColorV#rgb2hsv([r,g,b])
+    let g:ColorV.NAME=s:hex2nam(hex)
+    let g:ColorV.HSV.H=h
+    let g:ColorV.HSV.S=s
+    let g:ColorV.HSV.V=v
+    let g:ColorV.RGB.R=r
+    let g:ColorV.RGB.G=g
+    let g:ColorV.RGB.B=b
+    let g:ColorV.rgb=[r,g,b]
+    let g:ColorV.hsv=[h,s,v]
+endfunction "}}}
 "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "DRAW: "{{{1
 "Input: h,l,c,[loffset,coffset]
-function! s:draw_pallet(h,l,c,...) "{{{
+function! s:draw_palette(h,l,c,...) "{{{
     call s:clear_palmatch()
-    let [h,height,width,hstep,wstep]=[a:h,a:l,a:c,100.0/(a:l-1),100.0/(a:c-1)]
+    let [h,height,width,hstep,wstep]=[a:h,a:l,a:c,100.0/(a:l),100.0/(a:c)]
     let h_off=exists("a:1") ? a:1 : 1
-    let w_off=exists("a:2") ? a:2 : 1
+    let w_off=exists("a:2") ? a:2 : 0
     if height>100 || width>100 || height<0 || width<0
     	echoe "error palette input"
     	return -1
     endif
     let h=fmod(h,360.0)
     
-    let b:pal_list=[]
+    let b:pal_clr_list=[]
 
     let line=1
     while line<=height
         let v=100-(line-1)*hstep
+        let v= v==0 ? 1 : v 
         let col =1
         while col<=width
             let s=100-(col-1)*wstep
@@ -291,8 +377,7 @@ function! s:draw_pallet(h,l,c,...) "{{{
             let group="colorV".hex
             exec "hi ".group." guifg=#".hex." guibg=#".hex
             let pos="\\%".(line+h_off)."l\\%".(col+w_off)."c"
-            
-            call add(b:pal_list,hex)
+            call add(b:pal_clr_list,hex)
             
             " add hl match to pallet_dict
             if !exists("s:pallet_dict")|let s:pallet_dict={}|endif
@@ -305,11 +390,11 @@ function! s:draw_pallet(h,l,c,...) "{{{
 endfunction
 "}}}
 "Input: hex ffffff
-function! s:draw_pallet_hex(hex) "{{{
+function! s:draw_palette_hex(hex) "{{{
     let [r,g,b]=ColorV#hex2rgb(a:hex)
     let [h,s,v]=ColorV#rgb2hsv([r,g,b])
     let g:ColorV.HSV.H=h
-    call s:draw_pallet(h,
+    call s:draw_palette(h,
                 \s:pal_H,s:pal_W,s:poff_y,s:poff_x)
 endfunction "}}}
 "Input: rectangle[x,y,w,h] hex_list[ffffff,ffffff]
@@ -333,7 +418,7 @@ endfunction "}}}
 function! s:draw_history_block(hex) "{{{
     setl ma
     let hex= strpart(printf("%06x",'0x'.a:hex),0,6) 
-    let g:ColorV.history_set=exists("g:ColorV.history_set") ? g:ColorV.history_set : []
+    let g:ColorV.history_set=exists("g:ColorV.history_set") ? g:ColorV.history_set : ['ff0000']
     
     if exists("s:skip_his_block") && s:skip_his_block==1
     	let s:skip_his_block=0
@@ -437,6 +522,7 @@ function! s:draw_valLine(l,...) "{{{
 
     endwhile
 endfunction "}}}
+
 function! s:clear_palmatch() "{{{
     if !exists("s:pallet_dict")|let s:pallet_dict={}|endif
     for [key,var] in items(s:pallet_dict)
@@ -493,15 +579,16 @@ function! s:clear_hsvmatch() "{{{
     let s:hsv_dict={}
 endfunction "}}}
 
-function! s:draw_misc() "{{{
+function! s:init_misc() "{{{
     call s:clear_miscmatch()
-    hi arrowCheck guibg=#b30000 guifg=#cccccc gui=Bold
-    if s:mode=="normal"
+    " hi arrowCheck guibg=#b30000 guifg=#cccccc gui=Bold
+    hi arrowCheck guibg=bg guifg=fg gui=Bold,reverse
+    if s:mode=="max" || s:mode=="mid"
         let arrow_ptn='\(\%<6l\%>2l>.\{6}\|\%2l>.\{12}
-                    \\|\%1l\%>53c[\.?x]\)'
-    elseif s:mode=="mini"
+                    \\|\%1l\%>52c?\)'
+    elseif s:mode=="min"
         let arrow_ptn='\(\%<6l\%<39c>.\{6}\|\%1l\%>39c>.\{12}
-                    \\|\%1l\%>53c[\.?x]\)'
+                    \\|\%1l\%>52c?\)'
     endif
     if !exists("s:misc_dict")|let s:misc_dict={}|endif
     let s:misc_dict["arrowCheck"]=matchadd("arrowCheck",arrow_ptn)
@@ -516,25 +603,7 @@ function! s:draw_misc() "{{{
     endif
 endfunction "}}}
 
-function! s:update_global(hex) "{{{
-    let hex= strpart(printf("%06x",'0x'.a:hex),0,6) 
-    let g:ColorV.HEX=hex
-    let [r,g,b]= ColorV#hex2rgb(hex)
-    let [h,s,v]= ColorV#rgb2hsv([r,g,b])
-    let g:ColorV.NAME=s:hex2nam(hex)
-    let g:ColorV.HSV.H=h
-    let g:ColorV.HSV.S=s
-    let g:ColorV.HSV.V=v
-    let g:ColorV.RGB.R=r
-    let g:ColorV.RGB.G=g
-    let g:ColorV.RGB.B=b
-    let g:ColorV.rgb=[r,g,b]
-    let g:ColorV.hsv=[h,s,v]
-endfunction "}}}
-"}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"DRAW_TEXT:{{{1
-function! s:init_text(...) "{{{
+function! s:draw_text(...) "{{{
     setl ma
     let cur=s:clear_text()
     let hex=exists("a:1") ? printf("%06x",'0x'.a:1) : 
@@ -544,10 +613,12 @@ function! s:init_text(...) "{{{
     let [r,g,b]=[printf("%3d",r),printf("%3d",g),printf("%3d",b)]
     let [h,s,v]=[printf("%3d",h),printf("%3d",s),printf("%3d",v)]
     
-    if s:mode=="normal"
-    	let height=s:norm_height
-    elseif s:mode=="mini"
-        let height=s:mini_height
+    if s:mode=="max"
+    	let height=s:max_h
+    elseif s:mode=="min"
+        let height=s:min_h
+    elseif s:mode=="mid"
+        let height=s:mid_h
     endif
     
     let line=[] 
@@ -556,66 +627,27 @@ function! s:init_text(...) "{{{
         call add(line,m)
     endfor
 
-    if s:mode=="normal"
+    "parameters
+    if s:mode=="max" || s:mode=="mid"
         let line[0]=s:line("ColorV ".g:ColorV.ver,3)
         let line[1]=s:line("Hex:#".hex,24)
         let line[2]=s:line("R:".r."   H:".h,24)
         let line[3]=s:line("G:".g."   S:".s,24)
         let line[4]=s:line("B:".b."   V:".v,24)
-    elseif s:mode=="mini"
+    elseif s:mode=="min"
         let line[0]=s:line("ColorV ".g:ColorV.ver,3)
         let line[0]=s:line_sub(line[0],"R:".r."   H:".h,24)
         let line[0]=s:line_sub(line[0],"Hex:#".hex,42)
         let line[1]=s:line("G:".g."   S:".s,24)
         let line[2]=s:line("B:".b."   V:".v,24)
     endif
- 
-    if exists("g:ColorV_show_quit") && g:ColorV_show_quit==1 
-        let line[0]=s:line_sub(line[0],"x",55)
-    endif
-
+    
+    " tips mark (Question mark)
     if exists("g:ColorV_show_tips") && g:ColorV_show_tips==1
-    	let l:show_Qo=0
-        let l:show_tips=1
-    elseif exists("g:ColorV_show_tips") && g:ColorV_show_tips==2
-    	let l:show_Qo=1
-        let l:show_tips=0
-    else  
-    	let l:show_Qo=0
-        let l:show_tips=0
+        let line[0]=s:line_sub(line[0],"?",54)
     endif
-    if exists("s:toggle_tips") && s:toggle_tips==0
-        let l:show_tips=0
-    elseif exists("s:toggle_tips") && s:toggle_tips==1
-        let l:show_tips=1
-    endif
-    if s:mode=="normal"
-        if l:show_tips 
-            let line[6]=s:line_sub(line[6],"Choose:2-Click/2-Space",24)
-            let line[7]=s:line_sub(line[7],"Toggle:TAB     Edit:Enter",24)
-            let line[8]=s:line_sub(line[8],"Yank:yy/yr...  Paste:^V/p",24)
-            let line[9]=s:line_sub(line[9],"Help:F1/H      Quit:q/Q/^Wq",24)
-            if l:show_Qo==1
-                let line[0]=s:line_sub(line[0],".",54)
-            endif
-        endif
-        if l:show_Qo && !l:show_tips
-            let line[0]=s:line_sub(line[0],"?",54)
-        endif
-        elseif s:mode=="mini"
-        if l:show_tips
-            let line[0]=s:line_sub(line[0],"Edit:Enter",59)
-            let line[1]=s:line_sub(line[1],"Help:F1/H",59)
-            let line[2]=s:line_sub(line[2],"Quit:q/^Wq",59)
-            if l:show_Qo
-                let line[0]=s:line_sub(line[0],".",54)
-            endif
-        endif
-        if l:show_Qo && !l:show_tips
-            let line[0]=s:line_sub(line[0],"?",54)
-        endif
-    endif
-
+    
+    " hello world
     let [h1,h2,h3]=[s:his_color0,s:his_color1,s:his_color2]
     for [x,y,z,t] in s:clrf
         "if [h1,h2,h3] == [x,y,z]
@@ -623,7 +655,7 @@ function! s:init_text(...) "{{{
         if s:approx2(h1,x) && s:approx2(h2,y) && s:approx2(h3,z)
             let t=tr(t,s:t,s:e)
             let a=tr(s:a,s:t,s:e)
-            if s:mode=="mini"
+            if s:mode=="min"
                 let line[1]=s:line_sub(line[1],t,40)
                 let line[2]=s:line_sub(line[2],a,50)
             else
@@ -633,16 +665,18 @@ function! s:init_text(...) "{{{
             break
         endif
     endfor
-
+    
+    " colorname
     let nam=s:hex2nam(hex)
     if !empty(nam)
-        if s:mode=="mini"
+        if s:mode=="min"
         let line[1]=s:line_sub(line[1],nam,3)
         else
         let line[0]=s:line_sub(line[0],nam,40)
         endif
     endif
-    "star mark pos
+
+    "draw star mark at pos
     for i in range(height)
     	let line[i]=substitute(line[i],'\*',' ','g')
     endfor
@@ -653,21 +687,23 @@ function! s:init_text(...) "{{{
         let bg= g:ColorV.HEX
         exe "hi starPos guibg=#".bg." guifg=#".fg." gui=Bold"
     endif
+
     for i in range(height)
     	call setline(i+1,line[i])
     endfor
+
     if !exists("b:arrowck_pos")|let b:arrowck_pos=0|endif
-    call ColorV#toggle_arrow(b:arrowck_pos)
-     call setpos('.',cur)
+    call <SID>toggle_arrow(b:arrowck_pos)
+    call setpos('.',cur)
     setl noma
 endfunction "}}}
-
 function! s:get_star_pos() "{{{
     let HSV=g:ColorV.HSV
     let [h,s,v]=[HSV.H,HSV.S,HSV.V]
-    if s:mode=="normal"
-        let h_step=100.0/(s:pal_H-1)
-        let w_step=100.0/(s:pal_W-1)
+    
+    if s:mode=="max" || s:mode=="mid"
+        let h_step=100.0/(s:pal_H)
+        let w_step=100.0/(s:pal_W)
         let l=float2nr(round((100.0-v)/h_step))+1+s:poff_y
         let c=float2nr(round((100.0-s)/w_step))+1+s:poff_x
         if l>=s:pal_H+s:poff_y
@@ -677,7 +713,7 @@ function! s:get_star_pos() "{{{
             let c= s:pal_W+s:poff_x
         endif
     
-    elseif s:mode=="mini"
+    elseif s:mode=="min"
         " XXX: there should be 3(or 2 if with dynamic hueline) stars here , 
         " but the saturation star background is different .
         " So NOT do this .
@@ -690,7 +726,6 @@ function! s:get_star_pos() "{{{
     endif
     return [l,c]
 endfunction "}}}
-
 function! s:clear_text() "{{{
     if expand('%') !=g:ColorV.name
         call s:warning("Not [ColorV] buffer")
@@ -715,44 +750,236 @@ function! s:line_sub(line,text,pos) "{{{
     let pat='^\(.\{'.(pos-1).'}\)\%(.\{'.len(text).'}\)'
     return substitute(line,pat,'\1'.text,'')
 endfunction "}}}
+
 "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"BUFF: "{{{1
-function! s:set_buf_hex(hex) "{{{
+"INIT: "{{{1
+function! ColorV#Win(...) "{{{
+    " window check "{{{
+    if bufexists(g:ColorV.name) 
+    	let nr=bufnr('\[ColorV\]')
+    	let winnr=bufwinnr(nr)
+        if winnr>0 && bufname(nr)==g:ColorV.name
+            if bufwinnr('%') ==winnr
+                if expand('%') !=g:ColorV.name
+                    call s:warning("Not [ColorV] buffer")
+                    return
+                else
+                call s:echo("All ready in [ColorV] window.")
+                endif
+            else
+            	"Becareful
+                exec winnr."wincmd w"
+                if expand('%') !=g:ColorV.name
+                    call s:warning("Not [ColorV] buffer")
+                    return
+                else
+                    call s:echo("[ColorV] all ready exists.")
+                endif
+            endif
+        else
+            call s:echo("Open a new [ColorV]")
+            execute "botright" 'new' 
+            silent! file [ColorV]
+        endif
+    else
+        call s:echo("Open a new [ColorV]")
+        execute  "botright" 'new' 
+        silent! file [ColorV]
+    endif "}}}
+    " local setting "{{{
+    setl ft=ColorV 
+    setl nocursorline nocursorcolumn
+    setl tw=0
+    setl buftype=nofile
+    setl bufhidden=delete
+    setl nolist
+    setl noswapfile
+    setl nobuflisted
+    setl nowrap
+    setl nofoldenable
+    setl nomodeline
+    setl nonumber
+    setl foldcolumn=0
+    setl sidescrolloff=0
+    call s:init_hide()
+    call s:map_define() "}}}
+    " hex set "{{{
+    if exists("a:2") 
+    	"skip history if no new hex 
+        let hex_list=s:txt2hex(a:2)
+        if exists("hex_list[0][0]")
+            let hex=s:fmt_hex(hex_list[0][0])
+            call s:caution("Use [".hex."]") 
+        elseif !empty(s:nam2hex(a:2))
+            let hex=s:nam2hex(a:2)
+            call s:caution("Use color name [".hex."]") 
+        else
+            let hex = exists("g:ColorV.HEX") ? g:ColorV.HEX : "ff0000"
+            let s:skip_his_block=1
+            call s:caution("Use default [".hex."]") 
+        endif
+    else 
+        let hex = exists("g:ColorV.HEX") ? g:ColorV.HEX : "ff0000"
+        let s:skip_his_block=1
+    endif "}}}
+
+    " draw window "{{{
+    if exists("a:1") && a:1== "min" 
+    	let s:mode="min"
+        if winnr('$') != 1
+            execute 'resize' s:min_h
+            redraw
+        endif
+    	call s:draw_buf_hex(hex)
+    elseif  exists("a:1") && a:1== "max"
+    	let s:mode="max" 
+    	let s:pal_H=s:max_h-1
+        if winnr('$') != 1
+            execute 'resize' s:max_h
+            redraw
+        endif
+        call s:draw_buf_hex(hex)
+    else
+    	let s:mode="mid" 
+    	let s:pal_H=s:mid_h-1
+        if winnr('$') != 1
+            execute 'resize' s:mid_h
+            redraw
+        endif
+        call s:draw_buf_hex(hex)
+    	
+    endif "}}}
+
+endfunction "}}}
+function! s:init_hide() "{{{
+    "hi cursor guibg=#000 guifg=#000 
+    "hi visual guibg=NONE guibg=NONE
+    aug colorV_hide
+    au!
+    "au! WINENTER <buffer> hi cursor guibg=#000 guifg=#000 
+    "au! WINENTER <buffer> hi cursorIM guibg=#000 guifg=#000 
+    "au! winleave <buffer> hi cursor guibg=#999 guifg=#000 
+    "au! winleave <buffer> hi cursorIM guibg=#999 guifg=#000 
+    
+    "au! WINENTER <buffer> hi visual guibg=NONE guibg=NONE
+    "au! winleave <buffer> hi visual guibg=#333 guifg=NONE 
+    aug END
+endfun
+"}}}
+function! s:map_define() "{{{
+    nmap <silent><buffer> <c-k> :call <SID>set_in_pos()<cr>
+    nmap <silent><buffer> <space> :call <SID>set_in_pos()<cr>
+    nmap <silent><buffer> <space><space> :call <SID>set_in_pos()<cr>
+    nmap <silent><buffer> <leader>ck :call <SID>set_in_pos()<cr>
+    nmap <silent><buffer> <2-leftmouse> :call <SID>set_in_pos()<cr>
+    nmap <silent><buffer> <3-leftmouse> :call <SID>set_in_pos()<cr>
+
+    nmap <silent><buffer> <tab> :call <SID>toggle_arrow()<cr>
+    nmap <silent><buffer> <c-n> :call <SID>toggle_arrow()<cr>
+    nmap <silent><buffer> J :call <SID>toggle_arrow()<cr>
+    nmap <silent><buffer> K :call <SID>toggle_arrow(-2)<cr>
+    nmap <silent><buffer> <c-p> :call <SID>toggle_arrow(-2)<cr>
+    nmap <silent><buffer> <s-tab> :call <SID>toggle_arrow(-2)<cr>
+    
+    "xrgbhsv
+    nmap <silent><buffer> x :call <SID>toggle_arrow(0)<cr>
+    nmap <silent><buffer> r :call <SID>toggle_arrow(1)<cr>
+    nmap <silent><buffer> g :call <SID>toggle_arrow(2)<cr>
+    nmap <silent><buffer> gg :call <SID>toggle_arrow(2)<cr>
+    nmap <silent><buffer> b :call <SID>toggle_arrow(3)<cr>
+
+    nmap <silent><buffer> u :call <SID>toggle_arrow(4)<cr>
+    nmap <silent><buffer> s :call <SID>toggle_arrow(5)<cr>
+    nmap <silent><buffer> v :call <SID>toggle_arrow(6)<cr>
+
+    "edit
+    nmap <silent><buffer> a :call <SID>edit_at_arrow()<cr>
+    nmap <silent><buffer> i :call <SID>edit_at_arrow()<cr>
+    nmap <silent><buffer> <Enter> :call <SID>edit_at_arrow()<cr>
+    nmap <silent><buffer> <kEnter> :call <SID>edit_at_arrow()<cr>
+
+    "edit name
+    nmap <silent><buffer> na :call <SID>edit_colorname()<cr>
+    nmap <silent><buffer> ne :call <SID>edit_colorname()<cr>
+    nmap <silent><buffer> nx :call <SID>edit_colorname("X11")<cr>
+
+    " WONTFIX:quick quit without wait for next key after q
+    nmap <silent><buffer> q :call <SID>exit()<cr>
+    nmap <silent><buffer> Q :call <SID>exit()<cr>
+    "nmap <silent><buffer> <esc> :call <SID>exit()<cr>
+    nmap <silent><buffer> <c-w>q :call <SID>exit()<cr>
+    nmap <silent><buffer> <c-w><c-q> :call <SID>exit()<cr>
+    nmap <silent><buffer> ? :call <SID>echo_tips()<cr>
+    nmap <silent><buffer> H :h ColorV<cr>
+    nmap <silent><buffer> <F1> :h ColorV<cr>
+
+    "Copy color 
+    "map <silent><buffer> <c-c> :call <SID>copy("","+")<cr>
+    map <silent><buffer> C :call <SID>copy("","+")<cr>
+    map <silent><buffer> cc :call <SID>copy("","+")<cr>
+    map <silent><buffer> cx :call <SID>copy("0x","+")<cr>
+    map <silent><buffer> cs :call <SID>copy("#","+")<cr>
+    map <silent><buffer> c# :call <SID>copy("#","+")<cr>
+    map <silent><buffer> cr :call <SID>copy("RGB","+")<cr>
+    map <silent><buffer> cp :call <SID>copy("RGBP","+")<cr>
+    map <silent><buffer> caa :call <SID>copy("RGBA","+")<cr>
+    map <silent><buffer> cap :call <SID>copy("RGBAP","+")<cr>
+    map <silent><buffer> cn :call <SID>copy("NAME","+")<cr>
+    map <silent><buffer> ce :call <SID>copy("NAME","+")<cr>
+
+    map <silent><buffer> Y :call <SID>copy()<cr>
+    map <silent><buffer> yy :call <SID>copy()<cr>
+    map <silent><buffer> yx :call <SID>copy("0x")<cr>
+    map <silent><buffer> ys :call <SID>copy("#")<cr>
+    map <silent><buffer> y# :call <SID>copy("#")<cr>
+    map <silent><buffer> yr :call <SID>copy("RGB")<cr>
+    map <silent><buffer> yp :call <SID>copy("RGBP")<cr>
+    map <silent><buffer> yaa :call <SID>copy("RGBA")<cr>
+    map <silent><buffer> yap :call <SID>copy("RGBAP")<cr>
+    map <silent><buffer> yn :call <SID>copy("NAME")<cr>
+    map <silent><buffer> ye :call <SID>copy("NAME")<cr>
+    
+    "paste color
+    map <silent><buffer> <c-v> :call <SID>paste("+")<cr>
+    map <silent><buffer> p :call <SID>paste()<cr>
+    map <silent><buffer> P :call <SID>paste()<cr>
+    map <silent><buffer> <middlemouse> :call <SID>paste("+")<cr>
+    
+    "show all text
+    noremap <silent><buffer> <c-a> ggVG
+    noremap <silent><buffer> A ggVG
+
+    "easy moving
+    noremap j gj
+    noremap k gk
+endfunction "}}}
+function! s:draw_buf_hex(hex) "{{{
 
     if expand('%') != g:ColorV.name
         call s:warning("Not [ColorV] buffer")
         return
     endif
-    
     setl ma
-
     let hex= printf("%06x",'0x'.a:hex) 
-
-
     call s:update_global(hex)
-
     call s:draw_hueLine(1)
-    
-    if s:mode == "mini"
+    if s:mode == "min"
         call s:draw_satLine(2)
         call s:draw_valLine(3)
     else
-        call s:draw_pallet_hex(hex)
+        call s:draw_palette_hex(hex)
     endif
-    
+
+    call s:init_misc()
     call s:draw_history_block(hex)
-    call s:init_text(hex)
-
-
+    call s:draw_text(hex)
     setl noma
 endfunction "}}}
-
-function! s:set_bufandpos_hex(hex) "{{{
-    call s:set_bufandpos_rgb(ColorV#hex2rgb(a:hex))
+function! s:draw_bufandpos_hex(hex) "{{{
+    call s:draw_bufandpos_rgb(ColorV#hex2rgb(a:hex))
 endfunction "}}}
-
-function! s:set_bufandpos_rgb(rgb) "{{{
+function! s:draw_bufandpos_rgb(rgb) "{{{
     setl ma
     let [h,s,v]=ColorV#rgb2hsv(a:rgb)
     let [h,s,v]=[h+0.0,s+0.0,v+0.0]
@@ -769,14 +996,14 @@ function! s:set_bufandpos_rgb(rgb) "{{{
     	let c= s:pal_W+s:poff_x
     endif
 
-    call s:set_buf_hex(hex)
+    call s:draw_buf_hex(hex)
     call cursor(l,c)
     setl noma
 endfunction "}}}
 "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "EDIT: "{{{1
-function! ColorV#set_in_pos(...) "{{{
+function! s:set_in_pos(...) "{{{
     setl ma
 
     let l=exists("a:1") ? a:1 : line('.')
@@ -788,34 +1015,35 @@ function! ColorV#set_in_pos(...) "{{{
     let [r,g,b]=[clr.RGB.R,clr.RGB.G,clr.RGB.B]
     let [h,s,v]=[clr.HSV.H,clr.HSV.S,clr.HSV.V]
     "pallet
-    if s:mode=="normal" && l > s:poff_y && l<= s:pal_H+s:poff_y && c<= s:pal_W
+    if s:mode=="max" || s:mode=="mid" && l > s:poff_y && l<= s:pal_H+s:poff_y && c<= s:pal_W
         let idx=(l-s:poff_y-1)*s:pal_W+c-s:poff_x-1
-        let hex=b:pal_list[idx]
+        let hex=b:pal_clr_list[idx]
         call s:update_global(hex)
         call s:draw_history_block(hex)
         "call s:update_text(hex)
-        call s:init_text(hex)
-    " WORKAROUND: 110519  error while between s:pal_w and hue_width
-    " delete hue_width to avoid this
-    elseif l==1 && ( c<=s:pal_W  )
+        call s:draw_text(hex)
+        call s:echo("HEX(Pallet): ".hex)
+
+    "hue line
+    elseif l==1 &&  c<=s:pal_W 
         let [h1,s1,v1]=ColorV#rgb2hsv(ColorV#hex2rgb(s:hueline_list[(c-1)]))
-        call s:echo("Hue(Line): ".h1)
+        call s:echo("Hue(Hue Line): ".h1)
         let hex=ColorV#rgb2hex(ColorV#hsv2rgb([h1,s,v]))
-        call s:set_buf_hex(hex)
-    elseif s:mode=="mini" && l==2 && ( c<=s:pal_W  )
+        call s:draw_buf_hex(hex)
+    elseif s:mode=="min" && l==2 && ( c<=s:pal_W  )
         " let hex=s:satline_list[(c-1)]
         let [h1,s1,v1]=ColorV#rgb2hsv(ColorV#hex2rgb(s:satline_list[(c-1)]))
         call s:echo("SAT(Saturation Line): ".s1)
 
         let hex=ColorV#rgb2hex(ColorV#hsv2rgb([h,s1,v]))
-        call s:set_buf_hex(hex)
-    elseif s:mode=="mini" && l==3 && ( c<=s:pal_W  )
+        call s:draw_buf_hex(hex)
+    elseif s:mode=="min" && l==3 && ( c<=s:pal_W  )
         " let hex=s:valline_list[(c-1)]
         let [h1,s1,v1]=ColorV#rgb2hsv(ColorV#hex2rgb(s:valline_list[(c-1)]))
         call s:echo("VAL(Value Line): ".v1)
 
         let hex=ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v1]))
-        call s:set_buf_hex(hex)
+        call s:draw_buf_hex(hex)
 
     "history_block section "{{{
     elseif l<=(s:block_rect[3]+s:block_rect[1]-1) && l>=s:block_rect[1] &&
@@ -830,23 +1058,16 @@ function! ColorV#set_in_pos(...) "{{{
             let hex=s:his_color2
             call s:echo("HEX(history 2): ".hex)
         endif
-        " if s:mode=="mini"
-        call s:set_buf_hex(hex)
-        " else
-        "     call s:update_global(hex)
-        "     call s:draw_history_block(hex)
-        "     "call s:update_text(hex)
-        "     call s:init_text(hex)
-        " endif
+        call s:draw_buf_hex(hex)
     "}}}
     " Arrow section "{{{
     " WORKAROUND: add mini mode
-    elseif s:mode=="normal" && l<=5 && l>=2 && c>=24 && c<37
+    elseif  s:mode=="max" || s:mode=="mid" && l<=5 && l>=2 && c>=24 && c<37
         let idx=0
         let l:in_pos=0
         for [name,y,x,width] in s:norm_pos
             if l==y && c>=x && c<(x+width)
-                call ColorV#toggle_arrow(idx)
+                call <SID>toggle_arrow(idx)
                 let l:in_pos=1
                 break
             endif
@@ -857,12 +1078,12 @@ function! ColorV#set_in_pos(...) "{{{
             setl noma
             return -1
         endif
-    elseif s:mode=="mini" && l<=3 && c>=24 && c<=52
+    elseif s:mode=="min" && l<=3 && c>=24 && c<=52
         let idx=0
         let l:in_pos=0
         for [name,y,x,width] in s:mini_pos
             if l==y && c>=x && c<(x+width)
-                call ColorV#toggle_arrow(idx)
+                call <SID>toggle_arrow(idx)
                 let l:in_pos=1
                 break
             endif
@@ -874,12 +1095,9 @@ function! ColorV#set_in_pos(...) "{{{
             return -1
         endif
     "}}}
-    elseif l==1 && c==54 &&  strpart(getline(1),53)=~'[?\.]'
-        call ColorV#switching_tips()
+    elseif l==1 && c==54 && strpart(getline(1),53,1)=~'?'
+        call s:echo_tips()
         setl noma
-        return -1
-    elseif l==1 && c==55  && strpart(getline(1),54)=~'x'
-        call ColorV#exit()
         return -1
     else 
     	call s:warning("Not Proper Position.")
@@ -888,19 +1106,19 @@ function! ColorV#set_in_pos(...) "{{{
     endif
 
     if exists("g:ColorV_set_register") && g:ColorV_set_register==1
-    	call ColorV#copy()
+    	call <SID>copy()
     elseif exists("g:ColorV_set_register") && g:ColorV_set_register==2
-    	call ColorV#copy("","+")
+    	call <SID>copy("","+")
     endif
 
     setl noma
 endfunction "}}}
-function! ColorV#toggle_arrow(...) "{{{
+function! s:toggle_arrow(...) "{{{
     setl ma
     if !exists("b:arrowck_pos")|let b:arrowck_pos=0|endif
-    if s:mode=="normal"
+    if s:mode=="max" || s:mode=="mid"
         let l:cur_pos=s:norm_pos
-    elseif s:mode=="mini"
+    elseif s:mode=="min"
         let l:cur_pos = s:mini_pos
     endif
     let len=len(l:cur_pos)
@@ -932,10 +1150,10 @@ function! ColorV#toggle_arrow(...) "{{{
     redraw
     setl noma
 endfunction "}}}
-function! ColorV#edit_at_arrow(...) "{{{
+function! s:edit_at_arrow(...) "{{{
     "setl ma
     let postition=exists("a:1")? a:1 : b:arrowck_pos
-    call ColorV#toggle_arrow(postition)
+    call <SID>toggle_arrow(postition)
     let clr=g:ColorV
     let hex=clr.HEX
     let [r,g,b]=[clr.RGB.R,clr.RGB.G,clr.RGB.B]
@@ -1001,13 +1219,12 @@ function! ColorV#edit_at_arrow(...) "{{{
             "let s:skip_his_block=1
         return
     endif
-    call s:set_buf_hex(hex)
+    call s:draw_buf_hex(hex)
 
-    "call s:set_bufandpos_hex(hex)
+    "call s:draw_bufandpos_hex(hex)
     "setl noma
 endfunction "}}}
-
-function! ColorV#edit_colorname(...) "{{{
+function! s:edit_colorname(...) "{{{
     if exists("a:1") && a:1=="X11"
         let text = input("Input color name(X11:Blue/Green/Red):")
         let hex=s:nam2hex(text,a:1)
@@ -1017,38 +1234,23 @@ function! ColorV#edit_colorname(...) "{{{
     endif
 
     if !empty(hex)
-        call s:set_buf_hex(hex)
+        call s:draw_buf_hex(hex)
     else
     	call s:warning("Not a correct colorname. Nothing changed.")
     endif
 endfunction "}}}
 
-function! ColorV#switching_tips() "{{{
+function! s:echo_tips() "{{{
     let txt_list=s:tips_list
-    if exists("s:toggle_tips") && s:toggle_tips==1
-    	let s:toggle_tips=0
-    	call s:init_text()
-    	call s:seq_echo(txt_list)
-    elseif !exists("s:toggle_tips") || s:toggle_tips==0
-    	let s:toggle_tips=1
-    	call s:init_text()
-    	call s:seq_echo(txt_list)
+    if exists("g:ColorV_echo_tips") && g:ColorV_echo_tips ==1
+        call s:seq_echo(txt_list)
+    elseif exists("g:ColorV_echo_tips") && g:ColorV_echo_tips ==2
+        call s:rnd_echo(txt_list)
+    else
+        call s:all_echo(txt_list)
     endif
 endfunction "}}}
-
-function! s:seq_echo(txt_list) "{{{
-    let txt_list=a:txt_list
-    let s:seq_num= exists("s:seq_num") ? s:seq_num : 0
-    let idx=0
-    for txt in txt_list
-    	if fmod(s:seq_num,len(txt_list)) == idx
-            echo txt
-        endif
-        let idx+=1
-    endfor
-    let s:seq_num+=1
-endfunction "}}}
-function! ColorV#change_word_hue(step) "{{{
+function! s:change_word_hue(step) "{{{
     setl ma
     if !exists("g:ColorV.HSV.H")|let g:ColorV.HSV.H=0|endif
     let g:ColorV.HSV.H= (g:ColorV.HSV.H+a:step)<0 ?  
@@ -1056,218 +1258,10 @@ function! ColorV#change_word_hue(step) "{{{
                 \(g:ColorV.HSV.H+a:step) % 360
     echo "Hue:" g:ColorV.HSV.H
     call s:clear_palmatch()
-    call s:draw_pallet(g:ColorV.HSV.H,
+    call s:draw_palette(g:ColorV.HSV.H,
                 \s:pal_H,s:pal_W,s:poff_y,s:poff_x)
     setl noma
 endfun "}}}
-"}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"INIT: "{{{1
-function! ColorV#Win(...) "{{{
-    "window check
-    if bufexists(g:ColorV.name) "{{{
-    	let nr=bufnr('\[ColorV\]')
-    	let winnr=bufwinnr(nr)
-        if winnr>0 && bufname(nr)==g:ColorV.name
-            if bufwinnr('%') ==winnr
-                if expand('%') !=g:ColorV.name
-                    call s:warning("Not [ColorV] buffer")
-                    return
-                else
-                call s:echo("All ready in [ColorV] window.")
-                endif
-            else
-            	"Becareful
-                exec winnr."wincmd w"
-                if expand('%') !=g:ColorV.name
-                    call s:warning("Not [ColorV] buffer")
-                    return
-                else
-                    call s:echo("[ColorV] all ready exists.")
-                endif
-            endif
-        else
-            call s:echo("Open a new [ColorV]")
-            execute "botright" 'new' 
-            silent! file [ColorV]
-        endif
-    else
-        call s:echo("Open a new [ColorV]")
-        execute  "botright" 'new' 
-        silent! file [ColorV]
-    endif "}}}
-
-    setl ft=ColorV "{{{
-    setl nocursorline nocursorcolumn
-    setl tw=0
-    setl buftype=nofile
-    setl bufhidden=delete
-    setl nolist
-    setl noswapfile
-    setl nobuflisted
-    setl nowrap
-    setl nofoldenable
-    setl nomodeline
-    setl nonumber
-    setl foldcolumn=0
-    setl sidescrolloff=0
-    call s:init_hide()
-    call s:map_define() "}}}
-    
-    if exists("a:2") "{{{
-    	"skip history if no new hex 
-        let hex_list=s:txt2hex(a:2)
-        if exists("hex_list[0][0]")
-            let hex=s:fmt_hex(hex_list[0][0])
-        "elseif !len("a:2")
-            "let hex = exists("g:ColorV.HEX") ? g:ColorV.HEX : "ff0000"
-            "let s:skip_his_block=1
-        elseif !empty(s:nam2hex(a:2))
-            let hex=s:nam2hex(a:2)
-        else
-            let hex = exists("g:ColorV.HEX") ? g:ColorV.HEX : "ff0000"
-            let s:skip_his_block=1
-            call s:caution("Could not find any color in the text 
-                          \,use default [".hex."]") 
-        endif
-    else 
-        let hex = exists("g:ColorV.HEX") ? g:ColorV.HEX : "ff0000"
-        let s:skip_his_block=1
-    endif "}}}
-
-    if exists("a:1") && a:1== "mini" "{{{
-    	let s:mode="mini"
-        if winnr('$') != 1
-            execute 'resize' s:mini_height
-            redraw
-        endif
-    	call s:init_mini(hex)
-    else
-    	let s:mode="normal"
-        if winnr('$') != 1
-            execute 'resize' s:norm_height
-            redraw
-        endif
-        call s:init_normal(hex)
-    endif "}}}
-
-endfunction "}}}
-function! s:init_normal(hex) "{{{
-    let hex= s:fmt_hex(a:hex)
-    call s:update_global(hex)
-    call s:draw_hueLine(1)
-    call s:draw_pallet_hex(hex)
-    call s:draw_history_block(hex)
-    call s:draw_misc()
-    call s:init_text(hex)
-endfunction "}}}
-function! s:init_mini(hex) "{{{
-    let hex= s:fmt_hex(a:hex)
-    call s:update_global(hex)
-    call s:draw_hueLine(1)
-    call s:draw_satLine(2)
-    call s:draw_valLine(3)
-    call s:draw_history_block(hex)
-    call s:draw_misc()
-    call s:init_text(hex)
-endfunction
-"}}}
-
-function! s:init_hide() "{{{
-    "hi cursor guibg=#000 guifg=#000 
-    "hi visual guibg=NONE guibg=NONE
-    aug colorV_hide
-    au!
-    "au! WINENTER <buffer> hi cursor guibg=#000 guifg=#000 
-    "au! WINENTER <buffer> hi cursorIM guibg=#000 guifg=#000 
-    "au! winleave <buffer> hi cursor guibg=#999 guifg=#000 
-    "au! winleave <buffer> hi cursorIM guibg=#999 guifg=#000 
-    
-    "au! WINENTER <buffer> hi visual guibg=NONE guibg=NONE
-    "au! winleave <buffer> hi visual guibg=#333 guifg=NONE 
-    aug END
-endfun
-"}}}
-function! s:map_define() "{{{
-    nmap <silent><buffer> <c-k> :call ColorV#set_in_pos()<cr>
-    nmap <silent><buffer> <space> :call ColorV#set_in_pos()<cr>
-    nmap <silent><buffer> <space><space> :call ColorV#set_in_pos()<cr>
-    nmap <silent><buffer> <leader>ck :call ColorV#set_in_pos()<cr>
-    nmap <silent><buffer> <2-leftmouse> :call ColorV#set_in_pos()<cr>
-    nmap <silent><buffer> <3-leftmouse> :call ColorV#set_in_pos()<cr>
-
-    nmap <silent><buffer> <tab> :call ColorV#toggle_arrow()<cr>
-    nmap <silent><buffer> <c-n> :call ColorV#toggle_arrow()<cr>
-    nmap <silent><buffer> J :call ColorV#toggle_arrow()<cr>
-    nmap <silent><buffer> K :call ColorV#toggle_arrow(-2)<cr>
-    nmap <silent><buffer> <c-p> :call ColorV#toggle_arrow(-2)<cr>
-    nmap <silent><buffer> <s-tab> :call ColorV#toggle_arrow(-2)<cr>
-    
-    "xrgbhsv
-    nmap <silent><buffer> x :call ColorV#toggle_arrow(0)<cr>
-    nmap <silent><buffer> r :call ColorV#toggle_arrow(1)<cr>
-    nmap <silent><buffer> g :call ColorV#toggle_arrow(2)<cr>
-    nmap <silent><buffer> gg :call ColorV#toggle_arrow(2)<cr>
-    nmap <silent><buffer> b :call ColorV#toggle_arrow(3)<cr>
-
-    nmap <silent><buffer> u :call ColorV#toggle_arrow(4)<cr>
-    nmap <silent><buffer> s :call ColorV#toggle_arrow(5)<cr>
-    nmap <silent><buffer> v :call ColorV#toggle_arrow(6)<cr>
-
-    "edit
-    nmap <silent><buffer> a :call ColorV#edit_at_arrow()<cr>
-    nmap <silent><buffer> i :call ColorV#edit_at_arrow()<cr>
-    nmap <silent><buffer> <Enter> :call ColorV#edit_at_arrow()<cr>
-    nmap <silent><buffer> <kEnter> :call ColorV#edit_at_arrow()<cr>
-
-    "edit name
-    nmap <silent><buffer> na :call ColorV#edit_colorname()<cr>
-    nmap <silent><buffer> ne :call ColorV#edit_colorname()<cr>
-    nmap <silent><buffer> nx :call ColorV#edit_colorname("X11")<cr>
-
-    " WONTFIX:quick quit without wait for next key after q
-    nmap <silent><buffer> q :call ColorV#exit()<cr>
-    nmap <silent><buffer> Q :call ColorV#exit()<cr>
-    "nmap <silent><buffer> <esc> :call ColorV#exit()<cr>
-    nmap <silent><buffer> <c-w>q :call ColorV#exit()<cr>
-    nmap <silent><buffer> <c-w><c-q> :call ColorV#exit()<cr>
-    nmap <silent><buffer> ? :call ColorV#switching_tips()<cr>
-    nmap <silent><buffer> H :h ColorV<cr>
-    nmap <silent><buffer> <F1> :h ColorV<cr>
-
-    "Copy color 
-    "map <silent><buffer> <c-c> :call ColorV#copy("","+")<cr>
-    map <silent><buffer> C :call ColorV#copy("","+")<cr>
-    map <silent><buffer> cc :call ColorV#copy("","+")<cr>
-    map <silent><buffer> cx :call ColorV#copy("0x","+")<cr>
-    map <silent><buffer> cs :call ColorV#copy("#","+")<cr>
-    map <silent><buffer> c# :call ColorV#copy("#","+")<cr>
-    map <silent><buffer> cr :call ColorV#copy("RGB","+")<cr>
-    map <silent><buffer> cp :call ColorV#copy("RGBP","+")<cr>
-    map <silent><buffer> caa :call ColorV#copy("RGBA","+")<cr>
-    map <silent><buffer> cap :call ColorV#copy("RGBAP","+")<cr>
-    map <silent><buffer> cn :call ColorV#copy("NAME","+")<cr>
-    map <silent><buffer> ce :call ColorV#copy("NAME","+")<cr>
-
-    map <silent><buffer> Y :call ColorV#copy()<cr>
-    map <silent><buffer> yy :call ColorV#copy()<cr>
-    map <silent><buffer> yx :call ColorV#copy("0x")<cr>
-    map <silent><buffer> ys :call ColorV#copy("#")<cr>
-    map <silent><buffer> y# :call ColorV#copy("#")<cr>
-    map <silent><buffer> yr :call ColorV#copy("RGB")<cr>
-    map <silent><buffer> yp :call ColorV#copy("RGBP")<cr>
-    map <silent><buffer> yaa :call ColorV#copy("RGBA")<cr>
-    map <silent><buffer> yap :call ColorV#copy("RGBAP")<cr>
-    map <silent><buffer> yn :call ColorV#copy("NAME")<cr>
-    map <silent><buffer> ye :call ColorV#copy("NAME")<cr>
-    
-    "paste color
-    map <silent><buffer> <c-v> :call ColorV#paste("+")<cr>
-    map <silent><buffer> p :call ColorV#paste()<cr>
-    map <silent><buffer> P :call ColorV#paste()<cr>
-    map <silent><buffer> <middlemouse> :call ColorV#paste("+")<cr>
-
-endfunction "}}}
 "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "TEXT: "{{{1
@@ -1306,39 +1300,39 @@ function! s:txt2hex(txt) "{{{
     let hex_list=[]
     for [key,var] in items(hex_dict)
         if key=="HEX"
-                for clr in var
-                    call add(clr,key)
-                    call add(hex_list,clr)
-                endfor
+            for clr in var
+                call add(clr,key)
+                call add(hex_list,clr)
+            endfor
         elseif key=="HEX3"
-                for clr in var
-                    let clr[0]=substitute(clr[0],'.','&&','g')
-                    call add(clr,key)
+            for clr in var
+                let clr[0]=substitute(clr[0],'.','&&','g')
+                call add(clr,key)
                 call add(hex_list,clr)
-                endfor
+            endfor
         elseif key=="RGB" || key =="RGBA"
-                for clr in var
-                    let list=split(clr[0],',')
-                    let r=matchstr(list[0],'\d\{1,3}')
-                    let g=matchstr(list[1],'\d\{1,3}')
-                    let b=matchstr(list[2],'\d\{1,3}')
-                    let clr[0] = ColorV#rgb2hex([r,g,b])
-                    call add(clr,key)
+            for clr in var
+                let list=split(clr[0],',')
+                let r=matchstr(list[0],'\d\{1,3}')
+                let g=matchstr(list[1],'\d\{1,3}')
+                let b=matchstr(list[2],'\d\{1,3}')
+                let clr[0] = ColorV#rgb2hex([r,g,b])
+                call add(clr,key)
                 call add(hex_list,clr)
-                endfor
+            endfor
         elseif key=="RGBP" || key =="RGBAP"
-                for clr in var
-                    let list=split(clr[0],',')
-                    let r=matchstr(list[0],'\d\{1,3}')
-                    let g=matchstr(list[1],'\d\{1,3}')
-                    let b=matchstr(list[2],'\d\{1,3}')
-                    let clr[0] = ColorV#rgb2hex([r*2.55,g*2.55,b*2.55])
-                    call add(clr,key)
+            for clr in var
+                let list=split(clr[0],',')
+                let r=matchstr(list[0],'\d\{1,3}')
+                let g=matchstr(list[1],'\d\{1,3}')
+                let b=matchstr(list[2],'\d\{1,3}')
+                let clr[0] = ColorV#rgb2hex([r*2.55,g*2.55,b*2.55])
+                call add(clr,key)
                 call add(hex_list,clr)
-                endfor
+            endfor
         endif
     endfor
-    
+
     return hex_list
 endfunction "}}}
 function! s:hex2txt(hex,fmt,...) "{{{
@@ -1416,96 +1410,8 @@ function! s:hex2nam(hex,...) "{{{
     endfor
     return ""
 endfunction "}}}
-function! s:approx2(hex1,hex2,...) "{{{
-    let [h1,s1,v1] = ColorV#rgb2hsv(ColorV#hex2rgb(a:hex1))
-    let [h2,s2,v2] = ColorV#rgb2hsv(ColorV#hex2rgb(a:hex2))
-    let r=exists("a:1") ? a:1 : s:aprx_rate
-    if h2+r>=h1 && h1>=h2-r && s2+r>=s1 && s1>=s2-r
-                \&& v2+r>=v1 && v1>=v2-r
-    	return 1
-    else
-    	return 0
-    endif
 
-endfunction "}}}
-function! s:changing() "{{{
-    if exists("g:ColorV.change_word") && g:ColorV.change_word ==1
-    	let cur_pos=getpos('.')
-        let cur_bufwinnr=bufwinnr('%')
-        " go to the word_buf
-        exe g:ColorV.word_bufwinnr."wincmd w"
-        call setpos('.',g:ColorV.word_pos)
-
-        if g:ColorV.word_bufnr==bufnr('%') && g:ColorV.word_pos==getpos('.')
-             \ && g:ColorV.word_bufname==bufname('%')
-
-            let pat = expand('<cWORD>')
-            silent normal! B
-            let pat_idx=col('.')
-
-            "Not the origin word
-            if pat!= g:ColorV.word_pat
-                call s:warning("Not the same with the word to change.")
-                return -1
-            endif
-
-            if exists("g:ColorV.word_list[0]")
-                let hex=g:ColorV.HEX
-                let fmt=g:ColorV.word_list[3]
-                if &filetype=="vim"
-                        let str=s:hex2txt(hex,fmt,"X11")
-                else
-                        let str=s:hex2txt(hex,fmt)
-                endif
-            else
-                call s:warning("Could not find a color under cursor.")
-                let g:ColorV.change_word=0
-                let g:ColorV.change_all=0
-            	return 
-            endif
-
-            let idx=g:ColorV.word_list[1]
-            let len=g:ColorV.word_list[2]
-            let new_pat=substitute(pat,'\%'.(idx+1).'c.\{'.len.'}',str,'')
-
-            if exists("g:ColorV.change_all") && g:ColorV.change_all ==1
-                exec '%s/'.pat.'/'.new_pat.'/gc'
-            else
-                exec '.s/\%>'.(pat_idx-1).'c'.pat.'/'.new_pat.'/'
-            endif
-        endif
-        let g:ColorV.change_word=0
-        let g:ColorV.change_all=0
-        "back to origin pos
-        "WORKAROUND: not correct back position
-        "exe cur_bufwinnr."wincmd w"
-        "call setpos('.',cur_pos)
-    else
-        let g:ColorV.change_word=0
-        let g:ColorV.change_all=0
-    	return 0
-    endif
-endfunction
-"}}}
-function! s:caution(msg) "{{{
-    echohl Modemsg
-    exe "echom \"[ColorV]:".escape(a:msg,'"')."\""
-    echohl Normal
-endfunction "}}}
-function! s:warning(msg) "{{{
-    echohl Warningmsg
-    exe "echom \"[ColorV]:".escape(a:msg,'"')."\""
-    echohl Normal
-endfunction "}}}
-function! s:echo(msg) "{{{
-    if g:ColorV_silent_set==0
-        exe "echom \"[ColorV]:".a:msg."\""
-    else
-    	echom ""
-    endif
-endfunction "}}}
-
-function! ColorV#paste(...) "{{{
+function! s:paste(...) "{{{
     if  exists("a:1") && a:1=="\""
         let l:cliptext = @"
         call s:echo("Paste with Clipboard(reg\"): ".l:cliptext)
@@ -1527,10 +1433,10 @@ function! ColorV#paste(...) "{{{
     	return
     endif
     call s:echo("Set with first color in clipboard. HEX: [".hex."]")
-    call s:set_buf_hex(hex)
+    call s:draw_buf_hex(hex)
 
 endfunction "}}}
-function! ColorV#copy(...) "{{{
+function! s:copy(...) "{{{
     let fmt=exists("a:1") ? a:1 : "HEX"
     let l:cliptext=s:hex2txt(g:ColorV.HEX,fmt)
     let g:ColorV.history_copy=exists("g:ColorV.history_copy") ? g:ColorV.history_copy : []
@@ -1545,6 +1451,81 @@ function! ColorV#copy(...) "{{{
         echo "Copied to Clipboard(reg\"):" l:cliptext
         let @" = l:cliptext
     endif
+endfunction "}}}
+function! s:exit() "{{{
+    if expand('%') !=g:ColorV.name
+        call s:echo("Not the [ColorV] buffer")
+        return
+    endif
+    bw \[ColorV\]
+    call s:changing()
+endfunction "}}}
+function! s:changing() "{{{
+    if exists("g:ColorV.change_word") && g:ColorV.change_word ==1
+        let cur_pos=getpos('.')
+        let cur_bufwinnr=bufwinnr('%')
+        " go to the word_buf
+        exe g:ColorV.word_bufwinnr."wincmd w"
+        call setpos('.',g:ColorV.word_pos)
+
+        if g:ColorV.word_bufnr==bufnr('%') && g:ColorV.word_pos==getpos('.')
+                    \ && g:ColorV.word_bufname==bufname('%')
+
+            let pat = expand('<cWORD>')
+            silent normal! B
+            let pat_idx=col('.')
+
+            "Not the origin word
+            if pat!= g:ColorV.word_pat
+                call s:warning("Not the same with the word to change.")
+                return -1
+            endif
+
+            if exists("g:ColorV.word_list[0]")
+                let hex=g:ColorV.HEX
+                let fmt=g:ColorV.word_list[3]
+                if &filetype=="vim"
+                    let str=s:hex2txt(hex,fmt,"X11")
+                else
+                    let str=s:hex2txt(hex,fmt)
+                endif
+            else
+                call s:warning("Could not find a color under cursor.")
+                let g:ColorV.change_word=0
+                let g:ColorV.change_all=0
+                return 
+            endif
+
+            let idx=g:ColorV.word_list[1]
+            let len=g:ColorV.word_list[2]
+            let new_pat=substitute(pat,'\%'.(idx+1).'c.\{'.len.'}',str,'')
+
+            if exists("g:ColorV.change_all") && g:ColorV.change_all ==1
+                exec '%s/'.pat.'/'.new_pat.'/gc'
+            else
+                exec '.s/\%>'.(pat_idx-1).'c'.pat.'/'.new_pat.'/'
+            endif
+        endif
+        let g:ColorV.change_word=0
+        let g:ColorV.change_all=0
+        "back to origin pos
+        "WORKAROUND: not correct back position
+        "exe cur_bufwinnr."wincmd w"
+        "call setpos('.',cur_pos)
+    else
+        let g:ColorV.change_word=0
+        let g:ColorV.change_all=0
+        return 0
+    endif
+endfunction
+"}}}
+
+function! ColorV#clear_all() "{{{
+    call s:clear_blockmatch()
+    call s:clear_hsvmatch()
+    call s:clear_miscmatch()
+    call s:clear_palmatch()
+    call clearmatches()
 endfunction "}}}
 function! ColorV#open_word() "{{{
     let pat = expand('<cWORD>')
@@ -1565,7 +1546,7 @@ function! ColorV#open_word() "{{{
     endif
     
     if g:ColorV_word_mini==1
-        call ColorV#Win("mini",hex)
+        call ColorV#Win("min",hex)
     else
         call ColorV#Win(s:mode,hex)
     endif
@@ -1607,25 +1588,10 @@ function! ColorV#change_word(...) "{{{
     endif
 
     if g:ColorV_word_mini==1
-        call ColorV#Win("mini",hex)
+        call ColorV#Win("min",hex)
     else
         call ColorV#Win(s:mode,hex)
     endif
-endfunction "}}}
-function! ColorV#exit() "{{{
-    if expand('%') !=g:ColorV.name
-        call s:echo("Not the [ColorV] buffer")
-        return
-    endif
-    bw \[ColorV\]
-    call s:changing()
-endfunction "}}}
-function! ColorV#clear_all() "{{{
-    call s:clear_blockmatch()
-    call s:clear_hsvmatch()
-    call s:clear_miscmatch()
-    call s:clear_palmatch()
-    call clearmatches()
 endfunction "}}}
 "GUI
 "python pyGTK needed 
