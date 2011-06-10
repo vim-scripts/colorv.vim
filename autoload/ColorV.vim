@@ -1,67 +1,109 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "  Script: ColorV 
 "    File: autoload/ColorV.vim
-" Summary: A color manager with color toolkits
+" Summary: A Color Viewer and Color Picker for Vim
 "  Author: Rykka.Krin <rykka.krin@gmail.com>
 "    Home: 
-" Version: 1.4.0 
-" Last Update: 2011-06-03
+" Version: 1.7.0 
+" Last Update: 2011-06-09
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:save_cpo = &cpo
 set cpo&vim
 
 if !has("gui_running") || v:version < 700 || exists("g:colorV_loaded")
-    " "GUI MODE ONLY"
     finish
 endif
-
 let g:colorV_loaded = 1
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"SVAR: {{{
+"GVAR: "{{{1 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:ColorV={}
+let g:ColorV.name="[ColorV]"
+let g:ColorV.ver="1.7.0.1"
+
+let g:ColorV.HEX="ff0000"
+let g:ColorV.RGB={}
+let g:ColorV.HSV={}
+let g:ColorV.rgb=[]
+let g:ColorV.hsv=[]
+
+if !exists('g:ColorV_silent_set')
+    let g:ColorV_silent_set=0
+endif
+if !exists('g:ColorV_set_register')
+    let g:ColorV_set_register=0
+endif
+if !exists('g:ColorV_dynamic_hue')
+    let g:ColorV_dynamic_hue=0
+endif
+if !exists('g:ColorV_dynamic_hue_step')
+    let g:ColorV_dynamic_hue_step=6
+endif
+if !exists('g:ColorV_show_tips')
+    let g:ColorV_show_tips=1
+endif
+if !exists('g:ColorV_show_star')
+    let g:ColorV_show_star=1
+endif
+if !exists('g:ColorV_word_mini')
+    let g:ColorV_word_mini=1
+endif
+if !exists('g:ColorV_echo_tips')
+    let g:ColorV_echo_tips=0
+endif
+if !exists('g:ColorV_tune_step')
+    let g:ColorV_tune_step=5
+endif
+
+"}}}
+"SVAR: {{{1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 let s:mode= exists("s:mode") ? s:mode : "max"
-let [s:pal_W,s:pal_H]=[20,10]
-let [s:poff_x,s:poff_y]=[0,1]
 let [s:max_h,s:mid_h,s:min_h]=[11,6,3]
 
-let s:hue_width=30
-let s:sat_width=30
-let s:val_width=30
-let s:block_rect=[40,2,5,4]
+let [s:pal_W,s:pal_H]=[20,10]
+let [s:poff_x,s:poff_y]=[0,1]
+
+" let s:hue_width=30
+" let s:sat_width=30
+" let s:val_width=30
+let s:his_set_rect=[42,2,5,4]
+let s:his_cpd_rect=[24,7,2,1]
 let s:line_width=60
-let s:norm_pos=[["Hex:",2,24,11],
+let s:mid_pos=[["Hex:",2,24,10],
     \["R:",3,24,5],["G:",4,24,5],["B:",5,24,5],
-    \["H:",3,32,5],["S:",4,32,5],["V:",5,32,5]
+    \["H:",3,32,5],["S:",4,32,5],["V:",5,32,5],
+    \["N:",1,42,15]
     \]
-let s:mini_pos=[["Hex:",1,42,11],
-    \["R:",1,24,5],["G:",2,24,5],["B:",3,24,5],
-    \["H:",1,32,5],["S:",2,32,5],["V:",3,32,5]
+let s:min_pos=[["Hex:",1,22,10],
+    \["R:",2,22,5],["G:",2,29,5],["B:",2,36,5],
+    \["H:",3,22,5],["S:",3,29,5],["V:",3,36,5],
+    \["N:",1,42,15]
     \]
 let s:tips_list=[
             \'Choose: 2-Click/2-Space/Ctrl-K/Ctrl-J',
             \'Toggle: <TAB>/<C-N>/J   Back: <S-TAB>/<C-P>/K',
-            \'Goto Parameter: x/r/gg/b/u/s/v ',
-            \'Edit Parameter: Enter/a/i',
+            \'Goto Parameter(RGB/HSV): r/gg/b/u/s/v/x    Name:nn',
+            \'Edit Parameter(RGB/HSV): Enter/a/i',
             \'Colorname(W3C): na/ne      (X11):nx',
             \'Yank(reg"): yy/yr/ys/yn/... (reg+): cc/cr/cs/cn/...',
             \'Paste: <C-V>/p',
             \'Help: F1/H               Tips: ?',
             \'Quit: q/Q/<C-W>q/<C-W><C-Q>',
             \]
-let s:fmt={}
-let s:fmt.RGB='rgb(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3})'
-let s:fmt.RGBA='rgba(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3}\,\s*\d\{1,3}%\=)'
-let s:fmt.RGBP='rgb(\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%)'
-let s:fmt.RGBAP='rgba(\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%\=)'
-let s:fmt.HEX='\x\@<!\x\{6}\x\@!'
-"#fff only
-let s:fmt.HEX3='#\zs\x\{3}\x\@!'
+
+
 let s:t='fghDPijmrYFGtudBevwxklyzEIZOJLMnHsaKbcopqNACQRSTUVWX'
+
 "X11 Standard
 let s:clrnX11=[['Gray', 'BEBEBE'], ['Green', '00FF00']
             \, ['Maroon', 'B03060'], ['Purple', 'A020F0']]
 "W3C Standard
 let s:clrnW3C=[['Gray', '808080'], ['Green', '008000']
             \, ['Maroon', '800000'], ['Purple', '800080']]
+
 let s:clrn=[
 \  ['AliceBlue'           , 'f0f8ff'], ['AntiqueWhite'        , 'faebd7']
 \, ['Aqua'                , '00ffff'], ['Aquamarine'          , '7fffd4']
@@ -133,9 +175,6 @@ let s:clrn=[
 \, ['White'               , 'ffffff'], ['WhiteSmoke'          , 'f5f5f5']
 \, ['Yellow'              , 'ffff00'], ['YellowGreen'         , '9acd32']
 \]
-let s:aprx_rate=5
-let s:aprx_name=exists("g:ColorV_name_approx") ? g:ColorV_name_approx :
-            \ s:aprx_rate
 let s:clrf=[   ['ff0000', '00ff00', '0000ff', 'Uryyb Jbeyq']
             \, ['0000ff', '00ff00', 'ff0000', 'qyebj byyrU']
             \, ['000000', 'c00000', '009a00', 'Nstunavfgna~']
@@ -155,18 +194,45 @@ let s:clrf=[   ['ff0000', '00ff00', '0000ff', 'Uryyb Jbeyq']
             \, ['016549', 'FFFFFF', 'CD132A', 'Zrkvpb~']
             \, ['0000B2', 'F7D900', '0000B2', 'Zbyqbin~']
             \, ['008851', 'FFFFFF', '008851', 'Avtrevn']
-            \, ['188100', 'FFFFFF', '188100', 'Abesbyx Vfynaq']
-            \, ['CC0000', 'FFFFFF', 'CC0000', 'Creh']
+            \, ['188100', 'FFFFFF', '188100', 'Norfolk Island']
+            \, ['CC0000', 'FFFFFF', 'CC0000', 'Erchoyvp b Creh']
             \, ['002A7E', 'FCD115', 'CE1125', 'Ebznavn']
             \, ['009246', 'F8F808', 'DD171D', 'Frartny~']
             \]
+
+let s:fmt={}
+let s:fmt.RGB='rgb(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3})'
+let s:fmt.RGBA='rgba(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3}\,\s*\d\{1,3}%\=)'
+let s:fmt.RGBP='rgb(\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%)'
+let s:fmt.RGBAP='rgba(\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%\=)'
+let s:fmt.HEX='\x\@<!\x\{6}\x\@!'
+"#fff only
+let s:fmt.HEX3='#\zs\x\{3}\x\@!'
+
+let s:fmt.NAMW=''
+for [nam,hex] in s:clrnW3C+s:clrn
+    let s:fmt.NAMW .='\<'.nam.'\>\|'
+endfor
+
+let s:fmt.NAMX=''
+for [nam,hex] in s:clrnX11+s:clrn
+    let s:fmt.NAMX .='\<'.nam.'\>\|'
+endfor
+
+let s:fmt.NAMW =substitute(s:fmt.NAMW,'\\|$','','')
+let s:fmt.NAMX =substitute(s:fmt.NAMX,'\\|$','','')
+
 let s:a='Elxxn'
 let s:e='stuQCvwzeLSTghqOrijkxylmRVMBWYZaUfnXopbcdANPDEFGHIJK'
 
-
+let s:aprx_rate=5
+let s:aprx_name=exists("g:ColorV_name_approx") ? g:ColorV_name_approx :
+            \ s:aprx_rate
+let s:tune_step=exists("g:ColorV_tune_step") && g:ColorV_tune_step >0
+            \ ? g:ColorV_tune_step : 5
 "}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "CORE: "{{{
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NOTE: Can be called directly with other plugins
 " in [r,g,b] 0~255
 " out [H,S,V] 0~360 0~100
@@ -257,8 +323,18 @@ function! ColorV#hex2rgb(hex) "{{{
    return [printf("%d",r),printf("%d",g),printf("%d",b)]
 endfunction "}}}
 "}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "HELP: "{{{
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:echo_tips() "{{{
+    let txt_list=s:tips_list
+    if exists("g:ColorV_echo_tips") && g:ColorV_echo_tips ==1
+        call s:seq_echo(txt_list)
+    elseif exists("g:ColorV_echo_tips") && g:ColorV_echo_tips ==2
+        call s:rnd_echo(txt_list)
+    else
+        call s:all_echo(txt_list)
+    endif
+endfunction "}}}
 function! s:all_echo(txt_list) "{{{
     let txt_list=a:txt_list
     call s:caution("[Tips of Keyboard Shortcuts]")
@@ -293,19 +369,25 @@ function! s:seq_echo(txt_list) "{{{
     endfor
     let s:seq_num+=1
 endfunction "}}}
+
 function! s:caution(msg) "{{{
     echohl Modemsg
-    exe "echom \"[ColorV] ".escape(a:msg,'"')."\""
+    exe "echom \"[Caution] ".escape(a:msg,'"')."\""
     echohl Normal
 endfunction "}}}
 function! s:warning(msg) "{{{
     echohl Warningmsg
-    exe "echom \"[ColorV] ".escape(a:msg,'"')."\""
+    exe "echom \"[Warning] ".escape(a:msg,'"')."\""
+    echohl Normal
+endfunction "}}}
+function! s:error(msg) "{{{
+    echohl Errormsg
+    exe "echom \"[Error] ".escape(a:msg,'"')."\""
     echohl Normal
 endfunction "}}}
 function! s:echo(msg) "{{{
     if g:ColorV_silent_set==0
-        exe "echom \"[ColorV] ".escape(a:msg,'"')."\""
+        exe "echom \"[Note] ".escape(a:msg,'"')."\""
     else
     	echom ""
     endif
@@ -333,6 +415,19 @@ function! s:approx2(hex1,hex2,...) "{{{
 
 endfunction "}}}
 
+function! s:update_his_set(hex) "{{{
+    let hex= printf("%06x",'0x'.a:hex) 
+    " update history_set
+    let g:ColorV.history_set=exists("g:ColorV.history_set") ? g:ColorV.history_set : ['ff0000']
+    
+    if exists("s:skip_his_block") && s:skip_his_block==1
+    	let s:skip_his_block=0
+    else
+        if get(g:ColorV.history_set,-1)!=hex
+            call add(g:ColorV.history_set,hex)
+        endif
+    endif
+endfunction "}}}
 function! s:update_global(hex) "{{{
     let hex= strpart(printf("%06x",'0x'.a:hex),0,6) 
     let g:ColorV.HEX=hex
@@ -349,8 +444,8 @@ function! s:update_global(hex) "{{{
     let g:ColorV.hsv=[h,s,v]
 endfunction "}}}
 "}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "DRAW: "{{{1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "Input: h,l,c,[loffset,coffset]
 function! s:draw_palette(h,l,c,...) "{{{
     call s:clear_palmatch()
@@ -418,19 +513,11 @@ endfunction "}}}
 function! s:draw_history_block(hex) "{{{
     setl ma
     let hex= strpart(printf("%06x",'0x'.a:hex),0,6) 
-    let g:ColorV.history_set=exists("g:ColorV.history_set") ? g:ColorV.history_set : ['ff0000']
-    
-    if exists("s:skip_his_block") && s:skip_his_block==1
-    	let s:skip_his_block=0
-    else
-        call add(g:ColorV.history_set,hex)
-    endif
-
     let len=len(g:ColorV.history_set)
     let s:his_color2= len >2 ? g:ColorV.history_set[len-3] : 'ffffff'
     let s:his_color1= len >1 ? g:ColorV.history_set[len-2] : 'ffffff'
-    let s:his_color0= len >0 ? g:ColorV.history_set[len-1] : a:hex
-    call s:draw_multi_block(s:block_rect,[s:his_color0,s:his_color1,s:his_color2])
+    let s:his_color0= len >0 ? g:ColorV.history_set[len-1] : hex
+    call s:draw_multi_block(s:his_set_rect,[s:his_color0,s:his_color1,s:his_color2])
     setl noma
 endfunction "}}}
 
@@ -579,20 +666,31 @@ function! s:clear_hsvmatch() "{{{
     let s:hsv_dict={}
 endfunction "}}}
 
-function! s:init_misc() "{{{
+function! s:draw_misc() "{{{
     call s:clear_miscmatch()
-    " hi arrowCheck guibg=#b30000 guifg=#cccccc gui=Bold
-    hi arrowCheck guibg=bg guifg=fg gui=Bold,reverse
+
+    "arrow chose
+    hi arrowChose guibg=bg guifg=fg gui=Bold,reverse
     if s:mode=="max" || s:mode=="mid"
-        let arrow_ptn='\(\%<6l\%>2l>.\{6}\|\%2l>.\{12}
-                    \\|\%1l\%>52c?\)'
+        let chose_ptn='\%<6l\%>2l_\zs.\{5}
+                    \\|\%1l\%(_N:\)\zs.\{15}
+                    \\|\%2l\%<35c_\zs.\{10}
+                    \\|\%1l\%>52c?'
     elseif s:mode=="min"
-        let arrow_ptn='\(\%<6l\%<39c>.\{6}\|\%1l\%>39c>.\{12}
-                    \\|\%1l\%>52c?\)'
+        let chose_ptn='\%<6l\%>1l_\zs.\{5}
+                    \\|\%1l\%>35c\%(_N:\)\zs.\{15}
+                    \\|\%1l\%<35c_\zs.\{10}
+                    \\|\%1l\%>52c?'
     endif
     if !exists("s:misc_dict")|let s:misc_dict={}|endif
-    let s:misc_dict["arrowCheck"]=matchadd("arrowCheck",arrow_ptn)
+    let s:misc_dict["arrowChose"]=matchadd("arrowChose",chose_ptn)
     
+    "invisible arrow
+    hi arrow_invis guibg=bg guifg=bg 
+    let arrow_ptn='\%<6l_
+                \\|N:'
+    let s:misc_dict["arrow_invis"]=matchadd("arrow_invis",arrow_ptn)
+
     if g:ColorV_show_star==1
         let fg= g:ColorV.HSV.V<50 ?  "cccccc" : "222222"
         let bg= g:ColorV.HEX
@@ -630,23 +728,35 @@ function! s:draw_text(...) "{{{
     "parameters
     if s:mode=="max" || s:mode=="mid"
         let line[0]=s:line("ColorV ".g:ColorV.ver,3)
-        let line[1]=s:line("Hex:#".hex,24)
+        let line[0]=s:line_sub(line[0],"N:",40)
+        let line[1]=s:line("Hex:".hex,24)
         let line[2]=s:line("R:".r."   H:".h,24)
         let line[3]=s:line("G:".g."   S:".s,24)
         let line[4]=s:line("B:".b."   V:".v,24)
     elseif s:mode=="min"
         let line[0]=s:line("ColorV ".g:ColorV.ver,3)
-        let line[0]=s:line_sub(line[0],"R:".r."   H:".h,24)
-        let line[0]=s:line_sub(line[0],"Hex:#".hex,42)
-        let line[1]=s:line("G:".g."   S:".s,24)
-        let line[2]=s:line("B:".b."   V:".v,24)
+        let line[0]=s:line_sub(line[0],"Hex:".hex,22)
+        let line[0]=s:line_sub(line[0],"N:",40)
+        let line[1]=s:line("R:".r."  G:".g."  B:".b,22)
+        let line[2]=s:line("H:".h."  S:".s."  V:".v,22)
     endif
-    
+     
     " tips mark (Question mark)
     if exists("g:ColorV_show_tips") && g:ColorV_show_tips==1
         let line[0]=s:line_sub(line[0],"?",54)
     endif
     
+    " colorname
+    let nam=s:hex2nam(hex)
+    if !empty(nam)
+        if s:mode=="min"
+        let line[0]=s:line_sub(line[0],nam,42)
+        " let line[1]=s:line_sub(line[1],nam,3)
+        else
+        let line[0]=s:line_sub(line[0],nam,42)
+        endif
+    endif
+
     " hello world
     let [h1,h2,h3]=[s:his_color0,s:his_color1,s:his_color2]
     for [x,y,z,t] in s:clrf
@@ -656,25 +766,16 @@ function! s:draw_text(...) "{{{
             let t=tr(t,s:t,s:e)
             let a=tr(s:a,s:t,s:e)
             if s:mode=="min"
-                let line[1]=s:line_sub(line[1],t,40)
-                let line[2]=s:line_sub(line[2],a,50)
+                let line[1]=s:line_sub(line[1],t,42)
+                let line[2]=s:line_sub(line[2],a,52)
             else
-                let line[2]=s:line_sub(line[2],t,40)
-                let line[4]=s:line_sub(line[4],a,50)
+                let line[2]=s:line_sub(line[2],t,42)
+                let line[4]=s:line_sub(line[4],a,52)
             endif
             break
         endif
     endfor
-    
-    " colorname
-    let nam=s:hex2nam(hex)
-    if !empty(nam)
-        if s:mode=="min"
-        let line[1]=s:line_sub(line[1],nam,3)
-        else
-        let line[0]=s:line_sub(line[0],nam,40)
-        endif
-    endif
+   
 
     "draw star mark at pos
     for i in range(height)
@@ -693,8 +794,11 @@ function! s:draw_text(...) "{{{
     endfor
 
     if !exists("b:arrowck_pos")|let b:arrowck_pos=0|endif
-    call <SID>toggle_arrow(b:arrowck_pos)
+    call s:draw_arrow(b:arrowck_pos)
+
+    "put cursor back
     call setpos('.',cur)
+
     setl noma
 endfunction "}}}
 function! s:get_star_pos() "{{{
@@ -732,7 +836,8 @@ function! s:clear_text() "{{{
         return
     endif
     let cur=getpos('.')
-    silent! normal! ggVG"_x
+    " silent! normal! ggVG"_x
+    silent %delete _
     return cur
 endfunction "}}}
 "return text in blank line
@@ -742,18 +847,63 @@ function! s:line(text,pos) "{{{
     return repeat(' ',a:pos-1).a:text.repeat(' ',suf_len)
 endfunction "}}}
 "return substitute line at pos in input line
+"could not use doublewidth text
 function! s:line_sub(line,text,pos) "{{{
     let [line,text,pos]=[a:line,a:text,a:pos]
     if len(line) < len(text)+pos
     	let line = line.repeat(' ',len(text)+pos-len(line))
     endif
-    let pat='^\(.\{'.(pos-1).'}\)\%(.\{'.len(text).'}\)'
-    return substitute(line,pat,'\1'.text,'')
+    if pos!=1
+        let pat='^\(.\{'.(pos-1).'}\)\%(.\{'.len(text).'}\)'
+        return substitute(line,pat,'\1'.text,'')
+    else
+    	let pat='^\%(.\{'.len(text).'}\)'
+        return substitute(line,pat,text,'')
+    endif
 endfunction "}}}
 
+function! s:draw_arrow(...) "{{{
+    setl ma
+    if !exists("b:arrowck_pos")|let b:arrowck_pos=0|endif
+    if s:mode=="max" || s:mode=="mid"
+        let l:cur_pos=s:mid_pos
+    elseif s:mode=="min"
+        let l:cur_pos = s:min_pos
+    endif
+    let len=len(l:cur_pos)
+    " rmv all
+    for i in range(len)
+        let old= l:cur_pos[i]
+        let o=substitute(getline(old[1]),"_".old[0]," ".old[0],"")
+        call setline(old[1],o)
+    endfor
+
+    let goto=exists("a:1") ? a:1 : -1
+    if goto>=0 && goto < len
+        let b:arrowck_pos=goto
+        let new= l:cur_pos[goto]
+    elseif goto==-1
+        let b:arrowck_pos+=1
+        if  b:arrowck_pos>(len-1)|let b:arrowck_pos=0|endif
+        let new = l:cur_pos[b:arrowck_pos]
+
+    elseif goto==-2
+        let b:arrowck_pos-=1
+        if  b:arrowck_pos<0|let b:arrowck_pos=(len-1)|endif
+        let new = l:cur_pos[b:arrowck_pos]
+    else 
+    	return -1
+    endif
+    " change by matching text ptn (x_pos[0])
+    let n=substitute(getline(new[1])," ".new[0],"_".new[0],"")
+    call setline(new[1],n)
+
+    redraw
+    setl noma
+endfunction "}}}
 "}}}
+"CWIN: "{{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"INIT: "{{{1
 function! ColorV#Win(...) "{{{
     " window check "{{{
     if bufexists(g:ColorV.name) 
@@ -778,17 +928,16 @@ function! ColorV#Win(...) "{{{
                 endif
             endif
         else
-            call s:echo("Open a new [ColorV]")
+            " call s:echo("Open a new [ColorV]")
             execute "botright" 'new' 
             silent! file [ColorV]
         endif
     else
-        call s:echo("Open a new [ColorV]")
+        " call s:echo("Open a new [ColorV]")
         execute  "botright" 'new' 
         silent! file [ColorV]
     endif "}}}
     " local setting "{{{
-    setl ft=ColorV 
     setl nocursorline nocursorcolumn
     setl tw=0
     setl buftype=nofile
@@ -802,17 +951,18 @@ function! ColorV#Win(...) "{{{
     setl nonumber
     setl foldcolumn=0
     setl sidescrolloff=0
-    call s:init_hide()
+    call s:aug_init()
     call s:map_define() "}}}
     " hex set "{{{
     if exists("a:2") 
     	"skip history if no new hex 
         let hex_list=s:txt2hex(a:2)
+        let clr_hex=s:nam2hex(a:2)
         if exists("hex_list[0][0]")
             let hex=s:fmt_hex(hex_list[0][0])
-            call s:caution("Use [".hex."]") 
-        elseif !empty(s:nam2hex(a:2))
-            let hex=s:nam2hex(a:2)
+            call s:caution("Use [".hex."] Format:".hex_list[0][3]) 
+        elseif !empty(clr_hex)
+            let hex=clr_hex
             call s:caution("Use color name [".hex."]") 
         else
             let hex = exists("g:ColorV.HEX") ? g:ColorV.HEX : "ff0000"
@@ -827,32 +977,27 @@ function! ColorV#Win(...) "{{{
     " draw window "{{{
     if exists("a:1") && a:1== "min" 
     	let s:mode="min"
-        if winnr('$') != 1
-            execute 'resize' s:min_h
-            redraw
-        endif
-    	call s:draw_buf_hex(hex)
+        setl ft=ColorV_min 
+        let l:win_h=s:min_h
     elseif  exists("a:1") && a:1== "max"
     	let s:mode="max" 
+        setl ft=ColorV_max 
     	let s:pal_H=s:max_h-1
-        if winnr('$') != 1
-            execute 'resize' s:max_h
-            redraw
-        endif
-        call s:draw_buf_hex(hex)
+        let l:win_h=s:max_h
     else
     	let s:mode="mid" 
+        setl ft=ColorV_mid 
     	let s:pal_H=s:mid_h-1
-        if winnr('$') != 1
-            execute 'resize' s:mid_h
-            redraw
-        endif
-        call s:draw_buf_hex(hex)
-    	
-    endif "}}}
-
+        let l:win_h=s:mid_h
+    endif 
+    if winnr('$') != 1
+        execute 'resize' l:win_h
+        redraw
+    endif
+    call s:draw_buf_hex(hex)
+    "}}}
 endfunction "}}}
-function! s:init_hide() "{{{
+function! s:aug_init() "{{{
     "hi cursor guibg=#000 guifg=#000 
     "hi visual guibg=NONE guibg=NONE
     aug colorV_hide
@@ -875,34 +1020,41 @@ function! s:map_define() "{{{
     nmap <silent><buffer> <2-leftmouse> :call <SID>set_in_pos()<cr>
     nmap <silent><buffer> <3-leftmouse> :call <SID>set_in_pos()<cr>
 
-    nmap <silent><buffer> <tab> :call <SID>toggle_arrow()<cr>
-    nmap <silent><buffer> <c-n> :call <SID>toggle_arrow()<cr>
-    nmap <silent><buffer> J :call <SID>toggle_arrow()<cr>
-    nmap <silent><buffer> K :call <SID>toggle_arrow(-2)<cr>
-    nmap <silent><buffer> <c-p> :call <SID>toggle_arrow(-2)<cr>
-    nmap <silent><buffer> <s-tab> :call <SID>toggle_arrow(-2)<cr>
+    nmap <silent><buffer> <tab> :call <SID>draw_arrow()<cr>
+    nmap <silent><buffer> <c-n> :call <SID>draw_arrow()<cr>
+    nmap <silent><buffer> J :call <SID>draw_arrow()<cr>
+    nmap <silent><buffer> K :call <SID>draw_arrow(-2)<cr>
+    nmap <silent><buffer> <c-p> :call <SID>draw_arrow(-2)<cr>
+    nmap <silent><buffer> <s-tab> :call <SID>draw_arrow(-2)<cr>
     
     "xrgbhsv
-    nmap <silent><buffer> x :call <SID>toggle_arrow(0)<cr>
-    nmap <silent><buffer> r :call <SID>toggle_arrow(1)<cr>
-    nmap <silent><buffer> g :call <SID>toggle_arrow(2)<cr>
-    nmap <silent><buffer> gg :call <SID>toggle_arrow(2)<cr>
-    nmap <silent><buffer> b :call <SID>toggle_arrow(3)<cr>
+    nmap <silent><buffer> x :call <SID>draw_arrow(0)<cr>
+    nmap <silent><buffer> r :call <SID>draw_arrow(1)<cr>
+    nmap <silent><buffer> g :call <SID>draw_arrow(2)<cr>
+    nmap <silent><buffer> gg :call <SID>draw_arrow(2)<cr>
+    nmap <silent><buffer> b :call <SID>draw_arrow(3)<cr>
 
-    nmap <silent><buffer> u :call <SID>toggle_arrow(4)<cr>
-    nmap <silent><buffer> s :call <SID>toggle_arrow(5)<cr>
-    nmap <silent><buffer> v :call <SID>toggle_arrow(6)<cr>
+    nmap <silent><buffer> u :call <SID>draw_arrow(4)<cr>
+    nmap <silent><buffer> s :call <SID>draw_arrow(5)<cr>
+    nmap <silent><buffer> v :call <SID>draw_arrow(6)<cr>
 
     "edit
     nmap <silent><buffer> a :call <SID>edit_at_arrow()<cr>
     nmap <silent><buffer> i :call <SID>edit_at_arrow()<cr>
     nmap <silent><buffer> <Enter> :call <SID>edit_at_arrow()<cr>
     nmap <silent><buffer> <kEnter> :call <SID>edit_at_arrow()<cr>
+    nmap <silent><buffer> <kEnter> :call <SID>edit_at_arrow()<cr>
+    nmap <silent><buffer> = :call <SID>edit_at_arrow(-1,"+")<cr>
+    nmap <silent><buffer> + :call <SID>edit_at_arrow(-1,"+")<cr>
+    nmap <silent><buffer> - :call <SID>edit_at_arrow(-1,"-")<cr>
+    nmap <silent><buffer> _ :call <SID>edit_at_arrow(-1,"-")<cr>
 
     "edit name
-    nmap <silent><buffer> na :call <SID>edit_colorname()<cr>
-    nmap <silent><buffer> ne :call <SID>edit_colorname()<cr>
-    nmap <silent><buffer> nx :call <SID>edit_colorname("X11")<cr>
+    nmap <silent><buffer> nn :call <SID>draw_arrow(7)<cr>
+    nmap <silent><buffer> na :call <SID>input_colorname()<cr>
+    nmap <silent><buffer> ne :call <SID>input_colorname()<cr>
+    nmap <silent><buffer> nx :call <SID>input_colorname("X11")<cr>
+    nmap <silent><buffer> nt :call <SID>tune_colorname()<cr>
 
     " WONTFIX:quick quit without wait for next key after q
     nmap <silent><buffer> q :call <SID>exit()<cr>
@@ -947,8 +1099,8 @@ function! s:map_define() "{{{
     map <silent><buffer> <middlemouse> :call <SID>paste("+")<cr>
     
     "show all text
-    noremap <silent><buffer> <c-a> ggVG
-    noremap <silent><buffer> A ggVG
+    " noremap <silent><buffer> <c-a> ggVG
+    " noremap <silent><buffer> A ggVG
 
     "easy moving
     noremap j gj
@@ -960,8 +1112,13 @@ function! s:draw_buf_hex(hex) "{{{
         call s:warning("Not [ColorV] buffer")
         return
     endif
+
+    
     setl ma
+    setl lz
     let hex= printf("%06x",'0x'.a:hex) 
+    
+    call s:update_his_set(hex)
     call s:update_global(hex)
     call s:draw_hueLine(1)
     if s:mode == "min"
@@ -971,9 +1128,10 @@ function! s:draw_buf_hex(hex) "{{{
         call s:draw_palette_hex(hex)
     endif
 
-    call s:init_misc()
+    call s:draw_misc()
     call s:draw_history_block(hex)
     call s:draw_text(hex)
+    setl nolz
     setl noma
 endfunction "}}}
 function! s:draw_bufandpos_hex(hex) "{{{
@@ -1001,8 +1159,8 @@ function! s:draw_bufandpos_rgb(rgb) "{{{
     setl noma
 endfunction "}}}
 "}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "EDIT: "{{{1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:set_in_pos(...) "{{{
     setl ma
 
@@ -1014,95 +1172,75 @@ function! s:set_in_pos(...) "{{{
     let hex=clr.HEX
     let [r,g,b]=[clr.RGB.R,clr.RGB.G,clr.RGB.B]
     let [h,s,v]=[clr.HSV.H,clr.HSV.S,clr.HSV.V]
-    "pallet
+    "pallet "{{{
     if s:mode=="max" || s:mode=="mid" && l > s:poff_y && l<= s:pal_H+s:poff_y && c<= s:pal_W
         let idx=(l-s:poff_y-1)*s:pal_W+c-s:poff_x-1
         let hex=b:pal_clr_list[idx]
-        call s:update_global(hex)
-        call s:draw_history_block(hex)
-        "call s:update_text(hex)
-        call s:draw_text(hex)
         call s:echo("HEX(Pallet): ".hex)
-
-    "hue line
+        call s:draw_buf_hex(hex)
+    "}}}
+    "hue line "{{{
     elseif l==1 &&  c<=s:pal_W 
         let [h1,s1,v1]=ColorV#rgb2hsv(ColorV#hex2rgb(s:hueline_list[(c-1)]))
         call s:echo("Hue(Hue Line): ".h1)
         let hex=ColorV#rgb2hex(ColorV#hsv2rgb([h1,s,v]))
         call s:draw_buf_hex(hex)
     elseif s:mode=="min" && l==2 && ( c<=s:pal_W  )
-        " let hex=s:satline_list[(c-1)]
         let [h1,s1,v1]=ColorV#rgb2hsv(ColorV#hex2rgb(s:satline_list[(c-1)]))
         call s:echo("SAT(Saturation Line): ".s1)
 
         let hex=ColorV#rgb2hex(ColorV#hsv2rgb([h,s1,v]))
         call s:draw_buf_hex(hex)
     elseif s:mode=="min" && l==3 && ( c<=s:pal_W  )
-        " let hex=s:valline_list[(c-1)]
         let [h1,s1,v1]=ColorV#rgb2hsv(ColorV#hex2rgb(s:valline_list[(c-1)]))
         call s:echo("VAL(Value Line): ".v1)
 
         let hex=ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v1]))
         call s:draw_buf_hex(hex)
-
+    "}}}
     "history_block section "{{{
-    elseif l<=(s:block_rect[3]+s:block_rect[1]-1) && l>=s:block_rect[1] &&
-                \c>=s:block_rect[0] && c<=(40+s:block_rect[2]*3-1)  
-        if c<=(40+s:block_rect[2]*1-1)
+    elseif l<=(s:his_set_rect[3]+s:his_set_rect[1]-1)
+                \ && l>=s:his_set_rect[1] &&
+                \ c>=s:his_set_rect[0] && c<=(s:his_set_rect[0]+s:his_set_rect[2]*3-1)  
+        if c<=(s:his_set_rect[0]+s:his_set_rect[2]*1-1)
             let hex=s:his_color0
             call s:echo("HEX(history 0): ".hex)
-        elseif c<=(40+s:block_rect[2]*2-1)
+        elseif c<=(s:his_set_rect[0]+s:his_set_rect[2]*2-1)
             let hex=s:his_color1
             call s:echo("HEX(history 1): ".hex)
-        elseif c<=(40+s:block_rect[2]*3-1)
+        elseif c<=(s:his_set_rect[0]+s:his_set_rect[2]*3-1)
             let hex=s:his_color2
             call s:echo("HEX(history 2): ".hex)
         endif
         call s:draw_buf_hex(hex)
-    "}}}
-    " Arrow section "{{{
-    " WORKAROUND: add mini mode
-    elseif  s:mode=="max" || s:mode=="mid" && l<=5 && l>=2 && c>=24 && c<37
-        let idx=0
-        let l:in_pos=0
-        for [name,y,x,width] in s:norm_pos
-            if l==y && c>=x && c<(x+width)
-                call <SID>toggle_arrow(idx)
-                let l:in_pos=1
-                break
-            endif
-            let idx+=1
-        endfor
-        if l:in_pos != 1
-            call s:warning("Not Proper Position.")
-            setl noma
-            return -1
-        endif
-    elseif s:mode=="min" && l<=3 && c>=24 && c<=52
-        let idx=0
-        let l:in_pos=0
-        for [name,y,x,width] in s:mini_pos
-            if l==y && c>=x && c<(x+width)
-                call <SID>toggle_arrow(idx)
-                let l:in_pos=1
-                break
-            endif
-            let idx+=1
-        endfor
-        if l:in_pos != 1
-            call s:warning("Not Proper Position.")
-            setl noma
-            return -1
-        endif
     "}}}
     elseif l==1 && c==54 && strpart(getline(1),53,1)=~'?'
         call s:echo_tips()
         setl noma
         return -1
     else 
-    	call s:warning("Not Proper Position.")
+    	"arrow check "{{{
+    	if s:mode=="min" 
+            let l:pos=s:min_pos
+        elseif s:mode=="max" || s:mode=="mid" 
+            let l:pos=s:mid_pos
+        endif
+
+        let idx=0
+        if exists("l:pos")
+            for [name,y,x,width] in l:pos
+                if l==y && c>=x && c<(x+width)
+                    call s:draw_arrow(idx)
+                    return
+                endif
+                let idx+=1
+            endfor
+        endif "}}}
+
+        call s:warning("Not Proper Position.")
         setl noma
         return -1
+
     endif
 
     if exists("g:ColorV_set_register") && g:ColorV_set_register==1
@@ -1113,101 +1251,109 @@ function! s:set_in_pos(...) "{{{
 
     setl noma
 endfunction "}}}
-function! s:toggle_arrow(...) "{{{
-    setl ma
-    if !exists("b:arrowck_pos")|let b:arrowck_pos=0|endif
-    if s:mode=="max" || s:mode=="mid"
-        let l:cur_pos=s:norm_pos
-    elseif s:mode=="min"
-        let l:cur_pos = s:mini_pos
-    endif
-    let len=len(l:cur_pos)
-    for i in range(len)
-        let old= l:cur_pos[i]
-        let o=substitute(getline(old[1]),"> ".old[0],"  ".old[0],"")
-        call setline(old[1],o)
-    endfor
-
-    let goto=exists("a:1") ? a:1 : -1
-    if goto>=0 && goto < len
-        let b:arrowck_pos=goto
-        let new= l:cur_pos[goto]
-    elseif goto==-1
-        let b:arrowck_pos+=1
-        if  b:arrowck_pos>(len-1)|let b:arrowck_pos=0|endif
-        let new = l:cur_pos[b:arrowck_pos]
-
-    elseif goto==-2
-        let b:arrowck_pos-=1
-        if  b:arrowck_pos<0|let b:arrowck_pos=(len-1)|endif
-        let new = l:cur_pos[b:arrowck_pos]
-    else 
-    	return -1
-    endif
-    let n=substitute(getline(new[1]),"  ".new[0],"> ".new[0],"")
-    call setline(new[1],n)
-
-    redraw
-    setl noma
-endfunction "}}}
 function! s:edit_at_arrow(...) "{{{
     "setl ma
-    let postition=exists("a:1")? a:1 : b:arrowck_pos
-    call <SID>toggle_arrow(postition)
+    let postition=exists("a:1") && a:1!=-1 ? a:1 : b:arrowck_pos
+    let tune=exists("a:2") ? a:2 == "+" ? 1 : a:2 == "-" ? -1  : 0  : 0
+    call s:draw_arrow(postition)
     let clr=g:ColorV
     let hex=clr.HEX
     let [r,g,b]=[clr.RGB.R,clr.RGB.G,clr.RGB.B]
     let [h,s,v]=[clr.HSV.H,clr.HSV.S,clr.HSV.V]
     if postition==0 "{{{
-        let hex=input("Hex(000000~ffffff):")
-        if hex =~ '^\x\{6}$'
-            "do nothing then
-        else 
-            let l:error_input=1
+    	if tune==0
+            let hex=input("Hex(000000~ffffff,000~fff):")
+            if hex =~ '^\x\{6}$'
+                "do nothing then
+            elseif hex =~ '^\x\{3}$'
+                let hex=substitute(hex,'.','&&','g')
+            else 
+                let l:error_input=1
+            endif
+        else
+            return
         endif
     elseif postition==1
-        let r=input("RED(0~255):")
-        if r =~ '^\d\{,3}$' && r<256 && r>=0
-            let hex = ColorV#rgb2hex([r,g,b])
-        else 
-            let l:error_input=1
+        if tune==0
+            let r=input("RED(0~255):")
+            if r =~ '^\d\{,3}$' && r<256 && r>=0
+                let hex = ColorV#rgb2hex([r,g,b])
+            else 
+                let l:error_input=1
+            endif
+        else
+            let r+=tune*s:tune_step
+            let r= r<0 ? 0 : r> 255 ? 255 :r
+            let hex=ColorV#rgb2hex([r,g,b])
         endif
     elseif postition==2
-        let g=input("GREEN(0~255):")
-        if g =~ '^\d\{,3}$' && g<256 && g>=0
-            let hex = ColorV#rgb2hex([r,g,b])
-        else 
-            let l:error_input=1
+        if tune==0
+            let g=input("GREEN(0~255):")
+            if g =~ '^\d\{,3}$' && g<256 && g>=0
+                let hex = ColorV#rgb2hex([r,g,b])
+            else 
+                let l:error_input=1
+            endif
+        else
+            let g+=tune*s:tune_step
+            let g= g<0 ? 0 : g> 255 ? 255 :g
+            let hex=ColorV#rgb2hex([r,g,b])
         endif
     elseif postition==3
-        let b=input("BLUE(0~255):")
-        if b =~ '^\d\{,3}$' && b<256 && b>=0
-            let hex = ColorV#rgb2hex([r,g,b])
-        else 
-            let l:error_input=1
+        if tune==0
+            let b=input("BLUE(0~255):")
+            if b =~ '^\d\{,3}$' && b<256 && b>=0
+                let hex = ColorV#rgb2hex([r,g,b])
+            else 
+                let l:error_input=1
+            endif
+        else
+            let b+=tune*s:tune_step
+            let b= b<0 ? 0 : b> 255 ? 255 :b
+            let hex=ColorV#rgb2hex([r,g,b])
         endif
     elseif postition==4
-        let h=input("Hue(0~360):")
-        if h =~ '^\d\{,3}$' && h<=360 && h>=0
+        if tune==0
+            let h=input("Hue(0~360):")
+            if h =~ '^\d\{,3}$' && h<=360 && h>=0
+                let hex = ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v]))
+            else 
+                let l:error_input=1
+            endif
+        else
+            let h+=tune*s:tune_step
+            let h= h<0 ? 0 : h> 360 ? 360 :h
             let hex = ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v]))
-        else 
-            let l:error_input=1
         endif
     elseif postition==5
-        let s=input("Saturation(0~100):") 
-        if s =~ '^\d\{,3}$' && s<=100 && s>=0
+        if tune==0
+            let s=input("Saturation(0~100):") 
+            if s =~ '^\d\{,3}$' && s<=100 && s>=0
+                let hex = ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v]))
+            else 
+                let l:error_input=1
+            endif
+        else
+            let s+=tune*s:tune_step
+            let s= s<0 ? 0 : s> 100 ? 100 :s
             let hex = ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v]))
-        else 
-            let l:error_input=1
-            echom "Error input." 
         endif
     elseif postition==6
-        let v=input("Value:(0~100):") 
-        if v =~ '^\d\{,3}$' && v<=100 && v>=0
+        if tune==0
+            let v=input("Value:(0~100):") 
+            if v =~ '^\d\{,3}$' && v<=100 && v>=0
+                let hex = ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v]))
+            else 
+                let l:error_input=1
+            endif
+        else
+            let v+=tune*s:tune_step
+            let v= v<0 ? 0 : v> 100 ? 100 :v
             let hex = ColorV#rgb2hex(ColorV#hsv2rgb([h,s,v]))
-        else 
-            let l:error_input=1
         endif
+    elseif postition==7
+        call s:input_colorname()
+        return
     else 
             return -1
     setl noma
@@ -1215,16 +1361,12 @@ function! s:edit_at_arrow(...) "{{{
 
     if exists("l:error_input") && l:error_input==1
     	call s:warning("Error input. Nothing changed.")
-            "let hex=g:ColorV.HEX
-            "let s:skip_his_block=1
         return
     endif
     call s:draw_buf_hex(hex)
 
-    "call s:draw_bufandpos_hex(hex)
-    "setl noma
 endfunction "}}}
-function! s:edit_colorname(...) "{{{
+function! s:input_colorname(...) "{{{
     if exists("a:1") && a:1=="X11"
         let text = input("Input color name(X11:Blue/Green/Red):")
         let hex=s:nam2hex(text,a:1)
@@ -1232,23 +1374,35 @@ function! s:edit_colorname(...) "{{{
         let text = input("Input color name(W3C:Blue/Lime/Red):")
         let hex=s:nam2hex(text)
     endif
-
+    
     if !empty(hex)
         call s:draw_buf_hex(hex)
     else
-    	call s:warning("Not a correct colorname. Nothing changed.")
+        let t=tr(text,s:t,s:e)
+        let flg_l=s:flag_clr(t)
+        if type(flg_l)!=type(0)
+            call s:update_his_set(flg_l[2])
+            call s:update_his_set(flg_l[1])
+            call s:draw_buf_hex(flg_l[0])
+            let n=tr(flg_l[3],s:t,s:e)
+            call s:caution("Hello! ".n."!")
+        else
+            call s:warning("Not correct colorname. Nothing changed.")
+        endif
     endif
 endfunction "}}}
-
-function! s:echo_tips() "{{{
-    let txt_list=s:tips_list
-    if exists("g:ColorV_echo_tips") && g:ColorV_echo_tips ==1
-        call s:seq_echo(txt_list)
-    elseif exists("g:ColorV_echo_tips") && g:ColorV_echo_tips ==2
-        call s:rnd_echo(txt_list)
-    else
-        call s:all_echo(txt_list)
+function! s:flag_clr(nam) "{{{
+    if empty(a:nam)
+    	return 0
     endif
+    let clr_list=s:clrf
+    for [c1,c2,c3,flg] in clr_list
+        if flg =~?  a:nam.'\~\='
+            return [c1,c2,c3,flg]
+            break
+        endif
+    endfor
+    return 0
 endfunction "}}}
 function! s:change_word_hue(step) "{{{
     setl ma
@@ -1262,9 +1416,20 @@ function! s:change_word_hue(step) "{{{
                 \s:pal_H,s:pal_W,s:poff_y,s:poff_x)
     setl noma
 endfun "}}}
+function! s:tune_colorname() "{{{
+    if !empty(g:ColorV.NAME)
+    	let text=substitute(g:ColorV.NAME,'\~\+$',"","")
+        let hex=s:nam2hex(text)
+        if !empty(hex)
+            call s:draw_buf_hex(hex)
+        endif
+    else
+        call s:warning("No Colorname Currently. Nothing changed.")
+    endif
+endfunction "}}}
 "}}}
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "TEXT: "{{{1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " input: text
 " return: hexlist [[hex,idx,len,fmt],[hex,idx,len,fmt],...]
 function! s:txt2hex(txt) "{{{
@@ -1272,7 +1437,6 @@ function! s:txt2hex(txt) "{{{
     let hex_dict={}
     let o_dict={}
 
-    "let idx=0
     let round=10
 
     while round
@@ -1287,7 +1451,6 @@ function! s:txt2hex(txt) "{{{
                 exec "let hex_dict.".fmt."=exists(\"hex_dict.".fmt."\") ? hex_dict.".fmt." : []"
                 exec "call add(hex_dict.".fmt.
                             \",[pat_str,pat_idx,pat_len])"
-                "let idx+=1
             endif
         endfor
         if o_dict==hex_dict          
@@ -1295,41 +1458,49 @@ function! s:txt2hex(txt) "{{{
         endif
         let round-=1
     endwhile
-    unlet o_dict
-
+    "hex_dict {fmt:[str,idx,len],...}
+    "hex_list [[hex,idx,len,fmt],...]
+    
     let hex_list=[]
-    for [key,var] in items(hex_dict)
-        if key=="HEX"
+    for [fmt,var] in items(hex_dict)
+        if fmt=="HEX"
             for clr in var
-                call add(clr,key)
+                call add(clr,fmt)
                 call add(hex_list,clr)
             endfor
-        elseif key=="HEX3"
+        elseif fmt=="HEX3"
             for clr in var
                 let clr[0]=substitute(clr[0],'.','&&','g')
-                call add(clr,key)
+                call add(clr,fmt)
                 call add(hex_list,clr)
             endfor
-        elseif key=="RGB" || key =="RGBA"
+        elseif fmt=="RGB" || fmt =="RGBA"
             for clr in var
                 let list=split(clr[0],',')
                 let r=matchstr(list[0],'\d\{1,3}')
                 let g=matchstr(list[1],'\d\{1,3}')
                 let b=matchstr(list[2],'\d\{1,3}')
                 let clr[0] = ColorV#rgb2hex([r,g,b])
-                call add(clr,key)
+                call add(clr,fmt)
                 call add(hex_list,clr)
             endfor
-        elseif key=="RGBP" || key =="RGBAP"
+        elseif fmt=="RGBP" || fmt =="RGBAP"
             for clr in var
                 let list=split(clr[0],',')
                 let r=matchstr(list[0],'\d\{1,3}')
                 let g=matchstr(list[1],'\d\{1,3}')
                 let b=matchstr(list[2],'\d\{1,3}')
                 let clr[0] = ColorV#rgb2hex([r*2.55,g*2.55,b*2.55])
-                call add(clr,key)
+                call add(clr,fmt)
                 call add(hex_list,clr)
             endfor
+        " "NAMW and NAMX format ;not a <cword> here
+        " elseif fmt=="NAMW"
+        "     for clr in var
+        "     	let clr[0]=s:nam2hex(clr[0])
+        "         call add(clr,fmt)
+        "         call add(hex_list,clr)
+        "     endfor
         endif
     endfor
 
@@ -1373,12 +1544,14 @@ function! s:fmt_hex(hex) "{{{
     return strpart(printf("%06x",'0x'.a:hex),0,6) 
 endfunction "}}}
 function! s:nam2hex(nam,...) "{{{
+    if empty(a:nam)
+    	return 0
+    endif
     if exists("a:1") && a:1 == "X11"
     	let clr_list=s:clrn+s:clrnX11
     else
     	let clr_list=s:clrn+s:clrnW3C
     endif
-    
     for [nam,clr] in clr_list
         if a:nam ==? nam   
             return clr
@@ -1423,10 +1596,11 @@ function! s:paste(...) "{{{
         call s:echo("Paste with Clipboard(reg\"): ".l:cliptext)
     endif
     let hex_list=s:txt2hex(l:cliptext)
+    let clr_hex=s:nam2hex(l:cliptext)
     if len(hex_list)>0
         let hex=hex_list[0][0]
-    elseif !empty(s:nam2hex(l:cliptext))
-        let hex=s:nam2hex(l:cliptext)
+    elseif !empty(clr_hex)
+        let hex=clr_hex
         "let nam=s:hex2nam
     else
     	call s:warning("Could not find color in the text") 
@@ -1440,7 +1614,10 @@ function! s:copy(...) "{{{
     let fmt=exists("a:1") ? a:1 : "HEX"
     let l:cliptext=s:hex2txt(g:ColorV.HEX,fmt)
     let g:ColorV.history_copy=exists("g:ColorV.history_copy") ? g:ColorV.history_copy : []
-    call add(g:ColorV.history_copy,g:ColorV.HEX)
+    "no duplicated color to history
+    if get(g:ColorV.history_copy,-1)!=g:ColorV.HEX
+        call add(g:ColorV.history_copy,g:ColorV.HEX)
+    endif
     if  exists("a:2") && a:2=="\""
         echo "Copied to Clipboard(reg\"):" l:cliptext
         let @" = l:cliptext
@@ -1457,7 +1634,7 @@ function! s:exit() "{{{
         call s:echo("Not the [ColorV] buffer")
         return
     endif
-    bw \[ColorV\]
+    bd 
     call s:changing()
 endfunction "}}}
 function! s:changing() "{{{
@@ -1484,6 +1661,9 @@ function! s:changing() "{{{
             if exists("g:ColorV.word_list[0]")
                 let hex=g:ColorV.HEX
                 let fmt=g:ColorV.word_list[3]
+                if exists("g:ColorV.change2")
+                    let fmt=g:ColorV.change2
+                endif
                 if &filetype=="vim"
                     let str=s:hex2txt(hex,fmt,"X11")
                 else
@@ -1495,7 +1675,7 @@ function! s:changing() "{{{
                 let g:ColorV.change_all=0
                 return 
             endif
-
+            
             let idx=g:ColorV.word_list[1]
             let len=g:ColorV.word_list[2]
             let new_pat=substitute(pat,'\%'.(idx+1).'c.\{'.len.'}',str,'')
@@ -1531,14 +1711,15 @@ function! ColorV#open_word() "{{{
     let pat = expand('<cWORD>')
     let word=expand('<cword>')
     let hex_list=s:txt2hex(pat)
+    let clr_hex=s:nam2hex(word)
     if exists("hex_list[0][0]")
         let hex=s:fmt_hex(hex_list[0][0])
         "let g:ColorV.word_list=hex_list[0]
-    elseif !empty(s:nam2hex(word))
+    elseif !empty(clr_hex)
         if &filetype=="vim"
             let hex=s:nam2hex(word,"X11")
         else
-            let hex=s:nam2hex(word)
+            let hex=clr_hex
         endif
     else
         call s:warning("Could not find a color under cursor.")
@@ -1559,15 +1740,16 @@ function! ColorV#change_word(...) "{{{
     let pat = expand('<cWORD>')
     let word=expand('<cword>')
     let g:ColorV.word_pat=pat
+    let clr_hex=s:nam2hex(word)
     let hex_list=s:txt2hex(pat)
     if exists("hex_list[0][0]")
         let hex=s:fmt_hex(hex_list[0][0])
         let g:ColorV.word_list=hex_list[0]
-    elseif !empty(s:nam2hex(word))
+    elseif !empty(clr_hex)
         if &filetype=="vim"
             let hex=s:nam2hex(word,"X11")
         else
-            let hex=s:nam2hex(word)
+            let hex=clr_hex
         endif
         " let str=s:hex2nam(hex)
         let str=word
@@ -1587,15 +1769,24 @@ function! ColorV#change_word(...) "{{{
     	call s:caution("Will Change [".pat."] after ColorV closed.")
     endif
 
+    if exists("a:2")
+    	if a:2=~'RGB\|RGBA\|RGBP\|RGBAP\|HEX\|0x\|NAME\|#'
+            let g:ColorV.change2=a:2
+        endif
+    endif
+
     if g:ColorV_word_mini==1
         call ColorV#Win("min",hex)
     else
         call ColorV#Win(s:mode,hex)
     endif
 endfunction "}}}
-"GUI
+"}}}
+"PGTK: "{{{1
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "python pyGTK needed 
 function! ColorV#Dropper() "{{{
+call s:caution("Using GTK color picker.")
 python << EOF
 import pygtk,gtk,vim
 pygtk.require('2.0')
