@@ -4,7 +4,7 @@
 " Summary: A Color Viewer and Color Picker for Vim
 "  Author: Rykka.Krin <rykka.krin@gmail.com>
 "    Home: 
-" Version: 1.7.0 
+" Version: 1.7.6 
 " Last Update: 2011-06-09
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:save_cpo = &cpo
@@ -20,7 +20,7 @@ let g:colorV_loaded = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ColorV={}
 let g:ColorV.name="[ColorV]"
-let g:ColorV.ver="1.7.0.1"
+let g:ColorV.ver="1.7.6.1"
 
 let g:ColorV.HEX="ff0000"
 let g:ColorV.RGB={}
@@ -56,10 +56,13 @@ if !exists('g:ColorV_tune_step')
     let g:ColorV_tune_step=5
 endif
 
+if !exists('g:ColorV_win_pos')
+    let g:ColorV_win_pos="bot"
+endif
 "}}}
 "SVAR: {{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
+let s:ColorV={}
 let s:mode= exists("s:mode") ? s:mode : "max"
 let [s:max_h,s:mid_h,s:min_h]=[11,6,3]
 
@@ -205,9 +208,13 @@ let s:fmt.RGB='rgb(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3})'
 let s:fmt.RGBA='rgba(\s*\d\{1,3},\s*\d\{1,3},\s*\d\{1,3}\,\s*\d\{1,3}%\=)'
 let s:fmt.RGBP='rgb(\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%)'
 let s:fmt.RGBAP='rgba(\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%,\s*\d\{1,3}%\=)'
-let s:fmt.HEX='\x\@<!\x\{6}\x\@!'
+" TODO: change to defalt format name 'HEX' '#' , '0x'  '#3'
+let s:fmt.HEX='[#\x]\@<!\x\{6}\x\@!'
+let s:fmt.0x='0x\x\{6}\x\@!'
+"number sign 
+let s:fmt.NS6='#\x\{6}\x\@!'
 "#fff only
-let s:fmt.HEX3='#\zs\x\{3}\x\@!'
+let s:fmt.NS3='#\x\{3}\x\@!'
 
 let s:fmt.NAMW=''
 for [nam,hex] in s:clrnW3C+s:clrn
@@ -312,6 +319,7 @@ function! ColorV#rgb2hex(rgb)   "{{{
         let g= float2nr(g)
         let b= float2nr(b)
     catch /^Vim\%((\a\+)\)\=:E808/
+        " call s:debug("error E808")
     endtry
    return printf("%06x",r*0x10000+g*0x100+b*0x1)
 endfunction "}}}
@@ -392,7 +400,11 @@ function! s:echo(msg) "{{{
     	echom ""
     endif
 endfunction "}}}
-
+function! s:debug(msg) "{{{
+    if exists("g:ColorV_debug") && g:ColorV_debug==1
+        echoe "[Debug] ".escape(a:msg,'"')
+    endif
+endfunction "}}}
 function! s:roll(min,max) "{{{
     let init= str2nr(strftime("%S%m"))*9+
              \str2nr(strftime("%Y"))*3+
@@ -618,6 +630,7 @@ function! s:clear_palmatch() "{{{
             exe "hi clear ".key
             call remove(s:pallet_dict,key)
         catch /^Vim\%((\a\+)\)\=:E803/
+            " call s:debug("error E803")
             continue
         endtry
     endfor
@@ -632,6 +645,7 @@ function! s:clear_blockmatch() "{{{
             exe "hi clear ".key
             call remove(s:block_dict,key)
         catch /^Vim\%((\a\+)\)\=:E803/
+            " call s:debug("error E803")
             continue
         endtry
     endfor
@@ -646,6 +660,7 @@ function! s:clear_miscmatch() "{{{
             exe "hi clear ".key
             call remove(s:misc_dict,key)
         catch /^Vim\%((\a\+)\)\=:E803/
+            " call s:debug("error E803")
             continue
         endtry
     endfor
@@ -660,6 +675,7 @@ function! s:clear_hsvmatch() "{{{
             exe "hi clear ".key
             call remove(s:hsv_dict,key)
         catch /^Vim\%((\a\+)\)\=:E803/
+            " call s:debug("error E803")
             continue
         endtry
     endfor
@@ -777,7 +793,7 @@ function! s:draw_text(...) "{{{
     endfor
    
 
-    "draw star mark at pos
+    "draw star mark(asterisk) at pos
     for i in range(height)
     	let line[i]=substitute(line[i],'\*',' ','g')
     endfor
@@ -929,12 +945,24 @@ function! ColorV#Win(...) "{{{
             endif
         else
             " call s:echo("Open a new [ColorV]")
-            execute "botright" 'new' 
+            " execute "botright" 'new' 
+            if g:ColorV_win_pos =~ 'vert\%[ical]\|lefta\%[bove]\|abo\%[veleft]
+                \\|rightb\%[elow]\|bel\%[owright]\|to\%[pleft]\|bo\%[tright]'
+                execute  g:ColorV_win_pos 'new' 
+            else
+                execute  'bo' 'new' 
+            endif
             silent! file [ColorV]
         endif
     else
         " call s:echo("Open a new [ColorV]")
-        execute  "botright" 'new' 
+        " execute  "botright" 'new' 
+        if g:ColorV_win_pos =~ 'vert\%[ical]\|lefta\%[bove]\|abo\%[veleft]
+             \\|rightb\%[elow]\|bel\%[owright]\|to\%[pleft]\|bo\%[tright]'
+            execute  g:ColorV_win_pos 'new' 
+        else
+            execute  'bo' 'new' 
+        endif
         silent! file [ColorV]
     endif "}}}
     " local setting "{{{
@@ -951,6 +979,9 @@ function! ColorV#Win(...) "{{{
     setl nonumber
     setl foldcolumn=0
     setl sidescrolloff=0
+    if v:version >= 703
+        setl cc=
+    endif
     call s:aug_init()
     call s:map_define() "}}}
     " hex set "{{{
@@ -1057,11 +1088,11 @@ function! s:map_define() "{{{
     nmap <silent><buffer> nt :call <SID>tune_colorname()<cr>
 
     " WONTFIX:quick quit without wait for next key after q
-    nmap <silent><buffer> q :call <SID>exit()<cr>
-    nmap <silent><buffer> Q :call <SID>exit()<cr>
-    "nmap <silent><buffer> <esc> :call <SID>exit()<cr>
-    nmap <silent><buffer> <c-w>q :call <SID>exit()<cr>
-    nmap <silent><buffer> <c-w><c-q> :call <SID>exit()<cr>
+    nmap <silent><buffer> q :call ColorV#exit()<cr>
+    nmap <silent><buffer> Q :call ColorV#exit()<cr>
+    "nmap <silent><buffer> <esc> :call ColorV#exit()<cr>
+    nmap <silent><buffer> <c-w>q :call ColorV#exit()<cr>
+    nmap <silent><buffer> <c-w><c-q> :call ColorV#exit()<cr>
     nmap <silent><buffer> ? :call <SID>echo_tips()<cr>
     nmap <silent><buffer> H :h ColorV<cr>
     nmap <silent><buffer> <F1> :h ColorV<cr>
@@ -1103,8 +1134,10 @@ function! s:map_define() "{{{
     " noremap <silent><buffer> A ggVG
 
     "easy moving
-    noremap j gj
-    noremap k gk
+    noremap <silent><buffer>j gj
+    noremap <silent><buffer>k gk
+
+    " command! -buffer -nargs=1 Debug call s:debug(<q-args>)
 endfunction "}}}
 function! s:draw_buf_hex(hex) "{{{
 
@@ -1468,7 +1501,15 @@ function! s:txt2hex(txt) "{{{
                 call add(clr,fmt)
                 call add(hex_list,clr)
             endfor
-        elseif fmt=="HEX3"
+        elseif fmt=="NS6"
+            call s:debug("fmt is NS6 in hex_list")
+            for clr in var
+                let clr[0]=substitute(clr[0],'#','','')
+                call add(clr,fmt)
+                call add(hex_list,clr)
+            endfor
+            call s:debug(clr[0]." ".clr[1]." ".clr[2]." ".clr[3]." ")
+        elseif fmt=="NS3"
             for clr in var
                 let clr[0]=substitute(clr[0],'.','&&','g')
                 call add(clr,fmt)
@@ -1524,7 +1565,7 @@ function! s:hex2txt(hex,fmt,...) "{{{
                     \.float2nr(b/2.55)."%,100%)"
     elseif a:fmt=="HEX"
         let text=hex
-    elseif a:fmt=="#"
+    elseif a:fmt=="NS6"
         let text="#".hex
     elseif a:fmt=="0x"
         let text="0x".hex
@@ -1629,72 +1670,87 @@ function! s:copy(...) "{{{
         let @" = l:cliptext
     endif
 endfunction "}}}
-function! s:exit() "{{{
-    if expand('%') !=g:ColorV.name
-        call s:echo("Not the [ColorV] buffer")
-        return
-    endif
-    bd 
-    call s:changing()
-endfunction "}}}
 function! s:changing() "{{{
-    if exists("g:ColorV.change_word") && g:ColorV.change_word ==1
+    if exists("s:ColorV.change_word") && s:ColorV.change_word ==1
         let cur_pos=getpos('.')
         let cur_bufwinnr=bufwinnr('%')
         " go to the word_buf
-        exe g:ColorV.word_bufwinnr."wincmd w"
-        call setpos('.',g:ColorV.word_pos)
+        exe s:ColorV.word_bufwinnr."wincmd w"
+        call setpos('.',s:ColorV.word_pos)
 
-        if g:ColorV.word_bufnr==bufnr('%') && g:ColorV.word_pos==getpos('.')
-                    \ && g:ColorV.word_bufname==bufname('%')
+        if s:ColorV.word_bufnr==bufnr('%') && s:ColorV.word_pos==getpos('.')
+                    \ && s:ColorV.word_bufname==bufname('%')
 
             let pat = expand('<cWORD>')
             silent normal! B
             let pat_idx=col('.')
 
             "Not the origin word
-            if pat!= g:ColorV.word_pat
+            if pat!= s:ColorV.word_pat
                 call s:warning("Not the same with the word to change.")
                 return -1
             endif
-
-            if exists("g:ColorV.word_list[0]")
+            
+            "XXX: wrong substitute while change2 NAME with "#"
+            " because of '~'!
+            if exists("s:ColorV.word_list[0]")
                 let hex=g:ColorV.HEX
-                let fmt=g:ColorV.word_list[3]
-                if exists("g:ColorV.change2")
-                    let fmt=g:ColorV.change2
+                let fmt=s:ColorV.word_list[3]
+                if exists("s:ColorV.change2")
+                    let fmt=s:ColorV.change2
                 endif
                 if &filetype=="vim"
                     let str=s:hex2txt(hex,fmt,"X11")
                 else
                     let str=s:hex2txt(hex,fmt)
                 endif
+                let str=substitute(str,'\~','','g')
+                call s:debug(fmt." str:".str)
             else
                 call s:warning("Could not find a color under cursor.")
-                let g:ColorV.change_word=0
-                let g:ColorV.change_all=0
+                let s:ColorV.change_word=0
+                let s:ColorV.change_all=0
                 return 
             endif
             
-            let idx=g:ColorV.word_list[1]
-            let len=g:ColorV.word_list[2]
+            " error with '#fff' '#ffffff' if put cursor on '#'
+            " if (exists("s:ColorV.word_pre") && s:ColorV.word_pre=="#")
+            " " \||( exists("s:ColorV.word_cur") && s:ColorV.word_cur=="#")
+            "     let idx=s:ColorV.word_list[1]-1
+            "     let len=s:ColorV.word_list[2]+1
+            "     call s:debug("have #")
+            " else
+                let idx=s:ColorV.word_list[1]
+                let len=s:ColorV.word_list[2]
+            " endif
             let new_pat=substitute(pat,'\%'.(idx+1).'c.\{'.len.'}',str,'')
 
-            if exists("g:ColorV.change_all") && g:ColorV.change_all ==1
-                exec '%s/'.pat.'/'.new_pat.'/gc'
+            if exists("s:ColorV.change_all") && s:ColorV.change_all ==1
+            	try
+                    exec '%s/'.pat.'/'.new_pat.'/gc'
+                catch /^Vim\%((\a\+)\)\=:E486/
+                    " call s:debug("error E486")
+                endtry
             else
-                exec '.s/\%>'.(pat_idx-1).'c'.pat.'/'.new_pat.'/'
+            	try
+                    exec '.s/\%>'.(pat_idx-1).'c'.pat.'/'.new_pat.'/'
+                catch /^Vim\%((\a\+)\)\=:E486/
+                    " call s:debug("error E486")
+                endtry
             endif
         endif
-        let g:ColorV.change_word=0
-        let g:ColorV.change_all=0
+        let s:ColorV.change_word=0
+        let s:ColorV.change_all=0
         "back to origin pos
         "WORKAROUND: not correct back position
         "exe cur_bufwinnr."wincmd w"
         "call setpos('.',cur_pos)
+        let cur_winnr = bufwinnr(s:ColorV.word_bufname)
+        exe cur_winnr."wincmd w"
+        call setpos('.',s:ColorV.word_pos)
     else
-        let g:ColorV.change_word=0
-        let g:ColorV.change_all=0
+        let s:ColorV.change_word=0
+        let s:ColorV.change_all=0
         return 0
     endif
 endfunction
@@ -1708,13 +1764,17 @@ function! ColorV#clear_all() "{{{
     call clearmatches()
 endfunction "}}}
 function! ColorV#open_word() "{{{
+    let s:ColorV.word_bufnr=bufnr('%')
+    let s:ColorV.word_bufname=bufname('%')
+    let s:ColorV.word_bufwinnr=bufwinnr('%')
+    let s:ColorV.word_pos=getpos('.')
     let pat = expand('<cWORD>')
     let word=expand('<cword>')
     let hex_list=s:txt2hex(pat)
     let clr_hex=s:nam2hex(word)
     if exists("hex_list[0][0]")
         let hex=s:fmt_hex(hex_list[0][0])
-        "let g:ColorV.word_list=hex_list[0]
+        "let s:ColorV.word_list=hex_list[0]
     elseif !empty(clr_hex)
         if &filetype=="vim"
             let hex=s:nam2hex(word,"X11")
@@ -1725,26 +1785,50 @@ function! ColorV#open_word() "{{{
         call s:warning("Could not find a color under cursor.")
         return -1
     endif
-    
     if g:ColorV_word_mini==1
         call ColorV#Win("min",hex)
     else
         call ColorV#Win(s:mode,hex)
     endif
+    " wrong pos if open at top sometimes? if it's [No Name]
+    let cur_winnr = bufwinnr(s:ColorV.word_bufname)
+    exe cur_winnr."wincmd w"
+    call setpos('.',s:ColorV.word_pos)
+    " if s:ColorV.word_bufnr==bufnr('%') && s:ColorV.word_pos==getpos('.')
+    "             \ && s:ColorV.word_bufname==bufname('%')
+    " endif
 endfunction "}}}
 function! ColorV#change_word(...) "{{{
-    let g:ColorV.word_bufnr=bufnr('%')
-    let g:ColorV.word_bufname=bufname('%')
-    let g:ColorV.word_bufwinnr=bufwinnr('%')
-    let g:ColorV.word_pos=getpos('.')
+    let s:ColorV.word_bufnr=bufnr('%')
+    let s:ColorV.word_bufname=bufname('%')
+    let s:ColorV.word_bufwinnr=bufwinnr('%')
+    let s:ColorV.word_pos=getpos('.')
     let pat = expand('<cWORD>')
-    let word=expand('<cword>')
-    let g:ColorV.word_pat=pat
+    let word= expand('<cword>')
+
+    " "check '#' before
+    " silent normal! b
+    " if word=~'\x\{6}\|\x\{3}' &&
+    "             \matchstr(getline('.'), '\%' . 
+    "             \(col('.')>1 ? col('.')-1 :col('.')). 'c' . '.') =="#"
+    "     " let word='#'.word
+    "     let s:ColorV.word_pre="#"
+    " else
+    "     let s:ColorV.word_pre=""
+    " endif
+    " if word=~'#'
+    "     let s:ColorV.word_cur="#"
+    " else
+    "     let s:ColorV.word_cur=""
+    " endif
+    
+    "could not change '#ffffff'
+    let s:ColorV.word_pat=pat
     let clr_hex=s:nam2hex(word)
     let hex_list=s:txt2hex(pat)
     if exists("hex_list[0][0]")
         let hex=s:fmt_hex(hex_list[0][0])
-        let g:ColorV.word_list=hex_list[0]
+        let s:ColorV.word_list=hex_list[0]
     elseif !empty(clr_hex)
         if &filetype=="vim"
             let hex=s:nam2hex(word,"X11")
@@ -1755,30 +1839,65 @@ function! ColorV#change_word(...) "{{{
         let str=word
         let str_idx=match(pat,str)
         let str_len=len(str)
-        let g:ColorV.word_list=[hex,str_idx,str_len,"NAME"]
+        let s:ColorV.word_list=[hex,str_idx,str_len,"NAME"]
     else 
         call s:warning("Could not find a color under cursor.")
         return
     endif
 
-    let g:ColorV.change_word=1
+    let s:ColorV.change_word=1
     if exists("a:1") && a:1=="all"
-    	let g:ColorV.change_all=1
+    	let s:ColorV.change_all=1
         call s:caution("Will Substitute ALL [".pat."] after ColorV closed.")
     else
+    	let s:ColorV.change_all=0
     	call s:caution("Will Change [".pat."] after ColorV closed.")
     endif
 
     if exists("a:2")
-    	if a:2=~'RGB\|RGBA\|RGBP\|RGBAP\|HEX\|0x\|NAME\|#'
-            let g:ColorV.change2=a:2
-        endif
+            \ && a:2=~'RGB\|RGBA\|RGBP\|RGBAP\|HEX\|0x\|NAME\|NS6'
+        let s:ColorV.change2=a:2
+    elseif exists("s:ColorV.change2")
+        unlet s:ColorV.change2
     endif
 
     if g:ColorV_word_mini==1
         call ColorV#Win("min",hex)
     else
         call ColorV#Win(s:mode,hex)
+    endif
+endfunction "}}}
+function! ColorV#exit() "{{{
+    " if expand('%') !=g:ColorV.name
+    "     call s:echo("Not the [ColorV] buffer")
+    "     return
+    " endif
+    if bufexists(g:ColorV.name) 
+    	let nr=bufnr('\[ColorV\]')
+    	let winnr=bufwinnr(nr)
+        if winnr>0 && bufname(nr)==g:ColorV.name
+            if bufwinnr('%') == winnr
+                if expand('%') ==g:ColorV.name
+                    call s:echo("Close current [ColorV].")
+                    " call s:warning("Not [ColorV] buffer")
+                    " return
+                    bd
+                endif
+            else
+            	"Becareful
+                exec winnr."wincmd w"
+                if expand('%') ==g:ColorV.name
+                    call s:echo("Close existing [ColorV].")
+                    " call s:warning("Not [ColorV] buffer")
+                    " return
+                    bd
+                endif
+            endif
+        endif    
+    endif
+    " bd 
+    if exists("s:ColorV.change_word") && s:ColorV.change_word ==1
+        call s:changing()
     endif
 endfunction "}}}
 "}}}

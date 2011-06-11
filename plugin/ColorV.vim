@@ -22,6 +22,7 @@ command! -nargs=0  ColorVchange call ColorV#change_word()
 command! -nargs=0  ColorVchangeAll call ColorV#change_word("all")
 command! -nargs=0  ColorVclear call ColorV#clear_all()
 command! -nargs=1  ColorVchange2 call ColorV#change_word("",<q-args>)
+command! -nargs=0  ColorVquit call ColorV#exit()
 
 if has('python')
 command! -nargs=0  ColorVdropper call ColorV#Dropper()
@@ -62,10 +63,13 @@ if !hasmapto(':ColorVchange2 RGBP<CR>')
 endif
 
 if !hasmapto(':ColorVchange2 #<CR>')
-  silent! nmap <unique> <silent> <Leader>c2# :ColorVchange2 #<CR>
+  silent! nmap <unique> <silent> <Leader>c2# :ColorVchange2 NS6<CR>
 endif
 if !hasmapto(':ColorVdropper<CR>') && has('python')
   silent! nmap <unique> <silent> <Leader>cd :ColorVdropper<CR>
+endif
+if !hasmapto(':ColorVquit<CR>') && has('python')
+  silent! nmap <unique> <silent> <Leader>cq :ColorVquit<CR>
 endif
 
 let &cpo = s:save_cpo
