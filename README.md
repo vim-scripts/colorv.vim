@@ -1,108 +1,137 @@
-##INTRO:##
+
+#INTRO:#
+
 **ColorV** is a color tool for Vim.
-
-Have a look at it.
-
-* ColorV window
-    * Normal          http://flic.kr/p/9Vh7ES
-    * Mini            http://flic.kr/p/9Vh7P1
-* Colorname List window 
-    * colorname list  http://flic.kr/p/9Vh7xG
-* Generated List window
-    * Analogous       http://flic.kr/p/9Vh4Nh
-    * Monochromatic   http://flic.kr/p/9Vh8zj
-* Preview color text in file
-    * preview css     http://flic.kr/p/9VehHD
-    * preview vim     http://flic.kr/p/9VehUi
-
-Have a try of it. 
-Install it first. See details with |colorv-install|.
-
-Open ColorV window.  `<leader>cv`
-
-Open color name list window. `<leader>cl`
-
-Open ColorV window by word under cursor.
-
-    #ff9744 rgb(33,44,155) orangered  'cadetblue'
-
-put cursor on above words. `<leader>cw`
-
-Change the word under cursor with chosing color after quit the ColorV window.
-`<leader>cgg`
-
-Generate Analogous color scheme with cursor word `<leader>cgea`
-See details in |colorv-generate|
-
-Copy the color in the ColorV window.  `yy`
-
-Use GTK eyedropper to pick colors in screen.  `<leader>cd`
-('+python' compiled and pygtk2.0 included.)
-
-
-There are several configs and commands to define ColorV. 
-See details in help docs.  `:h colorv`
-
-If useful, please rate it
-    http://www.vim.org/scripts/script.php?script_id=3597
-
-If have any advice, patches or bug reports.
-Submit at github 
-    https://github.com/rykka/colorv
-
-##VERSION:##
-- NEW! 2.0.2  Preview Color in files or in line
-- NEW! 2.0.1  Generate color scheme (Analogous/Monochromatic/...)
-- NEW! 2.0.0  Color Name list window
-
-##INSTALL:##
+ 
+With this you can deal with colors easily.
     
-- Using vim.org: 
-    http://www.vim.org/scripts/script.php?script_id=3597
+###A Quick Start###
 
-Download the latest version of tar.gz file, extract it into your VIMFILE folder.("~/.vim" for linux. "$HOME/vimfiles" for windows)
+* Open ColorV window to select colors. 
 
-Then use help tag to generate tags.
+        <leader>cv      ColorV with previous mode.
+        <leader>cm/c1   min mode:Less Space.
+        <leader>c2      mid mode:Normal.
+        <leader>cx/c3   max mode:More Info.
 
-    :helptags ~/.vim/doc
+  **NOTE** 
 
-- Using git:
+>       <leader> is a key can change in vimrc. Default is "\".
+>       Mappings may not exist if it has been used by other plugins.
+>       Then you should redefine it in your vimrc.
 
-open terminal and input
+* Choose a color in ColorV window.
 
-    git clone git://github.com/rykka/ColorV.git ~/.vim/bundle/ColorV
+        Move the cursor around in the pallette. press <Enter>
+        The color will changed to the color you choose.
 
-then add &runtimepath to your vimrc; then run helptags
-(NOT necessary if pathogen.vim installed) 
+* Edit Hue property of the color.
 
-    set rtp+=~/.vim/bundle/ColorV/
-    :helptags ~/.vim/bundle/ColorV/doc
+        Move cursor to the property 'H: 50'. press <Enter>.
+        Input a number. The color will change by your input.
 
-- Using Vundle:
+* Get W3C standard colornames list.
+ 
+        <leader>cl
+        This will open a name list window that showing the colornames.
 
-Install script [Vundle.vim](https://github.com/gmarik/vundle)
-then put this line in your vimrc
+* Open ColorV window with color-text under cursor to get it's info.
 
-    Bundle 'rykka/colorv'
+        <leader>cw
 
-and use this to install it.
+        Color-Text: #ff9744 rgb(33,44,155) OrangeRed 'cadetblue'
 
-    :BundleInstall
+        Put your cursor on the word 'rgb(33,44,155)' and press <leader>cw.
+        ColorV is opend with it's color.
+
+* Easily change color-text under cursor with choosing color.
+ 
+        <leader>ce
+
+        Put your cursor on the word 'rgb(33,44,155)' and press <leader>ce.
+        Then choose a color and Close the window by pressing "q". 
+        You will see the word is changed with the choosed color.
+        Also you can try with 'cadetblue' 'hsl(50,30%,47%)'...
+
+* Generate 'Monochromatic' (and more) colorscheme List with color-text.
+ 
+        <leader>cgm
+
+* Copy the color in the ColorV window directly.
+
+        cc/<Ctrl-C>/yy
+
+* Paste a color-text to the ColorV window to get it's info.
+
+        p/<Ctrl-V>
+
+* Preview all color-text in current file with highlighting in it's color.
+
+        <leader>cpp
+
+* Use pyGTK colorpicker to pick colors on screen easily.
+ 
+        <leader>cd
+        (with '+python' compiled and pygtk2.0 included)
+
+##NEW IN 2.5:##
++ **Faster**
+
+>       Core function optimized and rewrited with python.
+>       10+ times Faster than previous version.
+>       (Normal mode:GUI runtime <0.06s, TERM runtime <0.10s)
+
++ **New Mode**
+
+>       Max mode ('<leader>cx') added, and show more infos(RGB/HSV/HLS/YIQ).
+>       With copied color history, which tracks color copied from ColorV.
+
++ **New Space**
+
+>       'HLS' added for choosing colors in HLS colorspace.
+>       Use it by set "g:ColorV_win_space" to "hls"
+ 
++ **With Term**
+
+>       Now ColorV works under Terminal(both 8/16/256 colors).   
+>       Set your '&t_Co' option (Default:8), if it supports more colors.
+ 
+
+  **NOTE** 
+
+>       If you have previous version of ColorV.
+>       You'd better delete it.
+>       because the file name have changed to 'colorv.vim'
+ 
+#INSTALL:#
+    
+  * Using [Vundle.vim](https://github.com/gmarik/vundle) (Recommend): 
+  
+>  Add this line to your vimrc  `Bundle 'Rykka/ColorV'` 
+
+>  Run `:BundleInstall` to install.
+
+>  And update ColorV eaisly by `:BundleInstall!`
+
+  * Using [ColorV on Vim.org](http://www.vim.org/scripts/script.php?script_id=3597) 
+
+>  Download the latest version of tar.gz file, 
+
+>  Extract to $VIMFILE folder. ("~/.vim" for linux. "$HOME/vimfiles" for windows)
+
+>  Generate helptags. `:helptags ~/.vim/doc`
 
 ##VIMRC EXAMPLE##
-    
-    "dynamic hue
-    "let g:ColorV_dynamic_hue=1
-    "let g:ColorV_dynamic_hue_step=9
 
-    "Keep It Simple and Silent
-    let g:ColorV_show_tips=0
-    "let g:ColorV_echo_tips=1
-    let g:ColorV_show_star=1
-    let g:ColorV_word_mini=1
-    let g:ColorV_silent_set=1
-    
-    "copy to "+ each time set colors
-    "let g:ColorV_set_register=2
-    "colorname approximate ratio
-    "let g:ColorV_name_approx=10
+
+```vim
+"remap the ColorVchange command 
+nmap <silent> <leader>cr :ColorVchange<CR>
+
+"use HLS colorspace instead of HSV
+let g:ColorV_win_space="hls"  
+"use YIQ colorspace for generating color list
+let g:ColorV_gen_space="yiq" 
+"Stop coloring colornames like 'Black','Navy','white'
+let g:ColorV_view_name=0
+```

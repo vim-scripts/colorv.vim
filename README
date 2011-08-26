@@ -1,58 +1,76 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=3597
 
- ColorV is a color tool for Vim.
-
-    Have a look at it.
-        Colorname List window 
-            colorname list  http://flic.kr/p/9Vh7xG
-        Generated List window
-            Analogous       http://flic.kr/p/9Vh4Nh
-            Monochromatic   http://flic.kr/p/9Vh8zj
-        Preview color text in file
-            preview css     http://flic.kr/p/9VehHD
-            preview vim     http://flic.kr/p/9VehUi
+    ColorV is a color tool for Vim.
+    With this you can deal with colors easily.
     
-    Have a try of it. 
-    Install it first. See details with |colorv-install|.
+    A Quick Start~
 
-    Open ColorV window.
-        <leader>cv
+    Open ColorV window to select colors. 
+        <leader>cv      ColorV with previous mode.
+        <leader>cm/c1   min mode:Less Space.
+        <leader>c2      mid mode:Normal.
+        <leader>cx/c3   max mode:More Info.
 
-    Open color name list window. 
+    NOTE    <leader> is a key can change in vimrc. Default is "\".
+            Mappings may not exist if it has been taken by other plugins.  
+            Then you should redefine it in your vimrc.
+
+    Choose a color in ColorV window.
+        Move the cursor around in the pallette.  press <Enter>
+        The color will changed to the color you choose.
+
+    Edit Hue property of the color.
+        Move cursor to the property 'H: 50'. press <Enter>.
+        Input a number. The color will change by your input.
+
+    Get W3C standard colornames list.
         <leader>cl
+        This will open a name list window that showing the colornames.
 
-    Open ColorV window by word under cursor.
-    #ff9744 rgb(33,44,155) orangered 'cadetblue'
+    Open ColorV window with color-text under cursor to get it's info.
         <leader>cw
 
-    Change the word under cursor with chosing color after exit ColorV window.
-        <leader>cgg
+        Color-Text: #ff9744 rgb(33,44,155) OrangeRed 'cadetblue'
 
-    Generate Analogous color scheme with cursor word 
-        <leader>cgea
-    See details in |colorv-generate|
+        Put your cursor on the word 'rgb(33,44,155)' and press <leader>cw.
+        ColorV is opend with it's color.
 
-    Copy the color in the ColorV window
-        yy
+    Easily change color-text under cursor with choosing color.
+        <leader>ce
 
-    Use GTK eyedropper to pick colors in screen.
-    ('+python' compiled and pygtk2.0 included)
+        Put your cursor on the word 'rgb(33,44,155)' and press <leader>ce.
+        Then choose a color and Close the window by pressing "q". 
+        You will see the word is changed with the choosed color.
+        Also you can try with 'cadetblue' 'hsl(50,30%,47%)'...
+    
+    Generate 'Monochromatic' (and more) colorscheme List with color-text.
+        <leader>cgm
+
+    Copy the color in the ColorV window directly.
+        cc/<Ctrl-C>/yy
+
+    Paste a color-text to ColorV window to get it's info.
+        p/<Ctrl-V>
+    
+    Preview all color-text in current file with highlighting in it's color.
+        <leader>cpp
+
+    Use pyGTK colorpicker to pick colors on screen easily.
         <leader>cd
-
-    There are configs and commands to define ColorV. 
-    See details in help docs. 
-    :h colorv
-
-    If useful, please rate it
-    http://www.vim.org/scripts/script.php?script_id=3597
-
-    If have any advice, patches or bug reports.
-    Submit it at github.
-    https://github.com/rykka/colorv
-
-
-##VERSION:##
-- NEW! 2.0.2  Preview Colors in buffer.
-- NEW! 2.0.1  Generate color scheme (Analogous/Monochromatic/...)
-- NEW! 2.0.0  Color Name list window
+        ('+python' compiled and pygtk2.0 included)
+------------------------------------------------------------------------------
+NEWS IN 2.5                                    
++ Faster~
+    Core function optimized and rewrited with python.
+    10+ times Faster than previous version.
+    (Normal mode:GUI runtime <0.06s, TERM runtime <0.10s)
++ New Mode~
+    Max mode ('<leader>cx') added, and show more infos(RGB/HSV/HLS/YIQ).
+    With copied color history, which tracks color copied from ColorV.
++ New Space~
+    'HLS' added for choosing colors in HLS colorspace.
+    Use it by set "g:ColorV_win_space" to "hls"
++ With Term~
+    Now ColorV works under Terminal(both 8/16/256 colors).   
+    Set your '&t_Co' option (Default:8), if it supports more colors.
 
