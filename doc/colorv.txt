@@ -32,16 +32,28 @@
 ==============================================================================
 INTRO                                               *colorv-intro*
 
-    *ColorV* is a color tool for Vim.
-    With this you can deal with colors easily.
-    
+    *ColorV* is a vim plugin for dealing with colors.
+    With this you can:
+        Choose colors 
+        Get color infos
+        Edit color-texts
+        Generate color lists
+        Preview color-texts in buffers
+        ...
+    (color-text: e.g.,yellow/rgb(255,255,0)/#ff3300)
+
+    Take a glance: http://i54.tinypic.com/2vi5h04.png
+
+------------------------------------------------------------------------------
+QUICKSTART                                               *colorv-quickstart*
+
     A Quick Start~
 
-    Open ColorV window to select colors. 
-        <leader>cv      ColorV with previous mode.
-        <leader>cm/c1   min mode:Less Space.
+    Open ColorV window to choose colors. 
+        <leader>c1/cm   min mode:Less Space.
         <leader>c2      mid mode:Normal.
-        <leader>cx/c3   max mode:More Info.
+        <leader>c3/cx   max mode:More Info.
+        <leader>cv      ColorV with previous mode.
 
     NOTE    <leader> is a key can change in vimrc. Default is "\".
             Mappings may not exist if it has been taken by other plugins.  
@@ -92,6 +104,7 @@ INTRO                                               *colorv-intro*
         ('+python' compiled and pygtk2.0 included)
 
     Have further tour. Goto |colorv-usage| section.
+
 ------------------------------------------------------------------------------
 NEWS IN 2.5                                         *colorv-news-2.5*
 + Faster~
@@ -108,9 +121,16 @@ NEWS IN 2.5                                         *colorv-news-2.5*
     Now ColorV works under Terminal(both 8/16/256 colors).   
     Set your '&t_Co' option (Default:8), if it supports more colors.
 
++ New in 2.5.1~
+    Auto preview css files.(g:ColorV_prev_css)
+
     NOTE    If you have previous version of ColorV.
             You'd better delete it.
             because the file name have changed.
+
+    NOTE    If your vim is not compiled with 'python'. 
+            Then it may be 3~5 times slower.
+            
 ==============================================================================
 INSTALL                                             *colorv-install*
 
@@ -125,8 +145,10 @@ INSTALL                                             *colorv-install*
     Download the latest version of tar.gz file, 
     Extract to $VIMFILE folder. 
     ("~/.vim" for linux. "$HOME/vimfiles" for windows)
-    Generate helptags. `:helptags ~/.vim/doc`
+    Generate helptags. `:helptags ~/.vim/doc
  
+     NOTE   If you got any bugs or suggestions.
+            Please post it at https://github.com/rykka/ColorV . 
 ==============================================================================
 USAGE                                               *colorv-usage*
 
@@ -259,10 +281,10 @@ COLORINFO                                            *colorv-colorinfo*
     NS3     #fff
     HEX0    0xffffff
     HEX     ffffff
-    RGB     rgb(255,255,255)
+    RGB     rgb(255,255,255)        (css1 standard)
     RGBP    rgb(100%,100%,100%)
-    RGBA    rgba(255,255,255,255)
-    RGBAP   rgba(100%,100%,100%,100%)
+    RGBA    rgba(255,255,255,1.0)   (css2 standard)
+    RGBAP   rgba(100%,100%,100%,1.0) 
     NAME    red/lime/blue (see |colorv-colorname|)
     HSV     hsv(360,100,100)
     HSL     hsl(300,100%,100%)      (css3 standard)
@@ -333,20 +355,20 @@ MAPPINGS                                            *colorv-mappings*
 
                                                     *colorv-mapping-generate*
     Generate color list with current word by matching type.
-    <leader>gh    Hue
-    <leader>gs    Saturation
-    <leader>gv    Value
-    <leader>ga    Analogous
-    <leader>gn    Neutral
-    <leader>gc    Clash
-    <leader>gp    Split-Complementary
-    <leader>gq    Square
-    <leader>g1/m  Monochromatic
-    <leader>g2    Complementary
-    <leader>g3/t  Triadic
-    <leader>g4    Rectangle(Tetradic)
-    <leader>g5    Five-Tone
-    <leader>g6    Six-Tone
+    <leader>cgh    Hue
+    <leader>cgs    Saturation
+    <leader>cgv    Value
+    <leader>cga    Analogous
+    <leader>cgn    Neutral
+    <leader>cgc    Clash
+    <leader>cgp    Split-Complementary
+    <leader>cgq    Square
+    <leader>cg1/m  Monochromatic
+    <leader>cg2    Complementary
+    <leader>cg3/t  Triadic
+    <leader>cg4    Rectangle(Tetradic)
+    <leader>cg5    Five-Tone
+    <leader>cg6    Six-Tone
     See |colorv-generate| for details.
 
                                                     *colorv-mapping-preview*
@@ -381,6 +403,7 @@ MAPPINGS                                            *colorv-mappings*
     yap         Copy RGBAP format 'rgba(100%,100%,100%.100%)' into register"
     yn          Copy NAM format 'white' into register"
     yh          Copy HSV format 'hsv(360,100,100)' into register"
+    yl          Copy HSV format 'hsl(360,100,100)' into register"
 
     C/cc        Copy HEX format 'ffffff' into register+
     cs/c#       Copy NS6 format '#ffffff' into register+
@@ -390,7 +413,8 @@ MAPPINGS                                            *colorv-mappings*
     caa         Copy RGBA format 'rgba(255,255,255,255)' into register+
     cap         Copy RGBAP format 'rgba(100%,100%,100%.100%)' into register+
     cn          Copy NAM format 'white' into register+
-    ch          Copy HSV format 'hsv(360,100,100)' into register+
+    ch          opy HSV format 'hsv(360,100,100)' into register+
+    cl          Copy HSV format 'hsl(360,100,100)' into register+
 
     NOTE    The register" (|quotequote|) is Unnamed register used with 
             the "d", "c", "s", "x" commands or copied with the yank "y" 
@@ -542,16 +566,22 @@ OPTIONS                                             *colorv-options*
                                                 (default=0)
     g:ColorV_view_block     Always Previewing color-text with same fg/bg 
                             colors.
+
+                                                *g:ColorV_prev_css*
+                                            (if has("python":default=1 ))
+    g:ColorV_prev_css       Auto Preview color-text in *.css files.
+                            Update view after write file.
+
                                                 *g:ColorV_cache_File*
                                             (default='~/.vim_ColorV_cache')
-    g:ColorV_cache_File     The history_copied_list's cache file position.
+    g:ColorV_cache_File     The copied_history_list's cache file position.
 
                                                 *g:ColorV_debug*
                                                 (default=0)
-    g:ColorV_debug          Debug mode with timer.
+    g:ColorV_debug          Debug mode.
                                                 *g:ColorV_no_python*
                                                 (default=0)
-    g:ColorV_no_python      Stop using Python!
+    g:ColorV_no_python      No Python!
 ------------------------------------------------------------------------------
 VIMRC EXAMPLE                                       *colorv-example*
 
@@ -569,6 +599,7 @@ VIMRC EXAMPLE                                       *colorv-example*
     let g:ColorV_gen_space="yiq" 
     "Stop coloring colornames like 'Black','Navy','white'
     let g:ColorV_view_name=0
+
 <                    
 ==============================================================================
 VARIABLES                                           *colorv-variables*
@@ -697,7 +728,7 @@ FUNCTIONS                                           *colorv-functions*
 ==============================================================================
 DEVELOPER                                             *colorv-developer*
 
-    |ColorV| is develped by Rykka Krin |<Rykka.Krin@gmail.com>|.
+    |ColorV| is develped by Rykka Krin |<Rykka.Krin(at)gmail.com>|.
    
     The reason why I wrote this plugin is because the ColorSel.vim
     does not support mouse, And wasn't so easy to choose one desired color.
@@ -710,11 +741,12 @@ DEVELOPER                                             *colorv-developer*
         Shougo          NeoComplCache. Auto complete plugin that is great.
         David Necas     ColorSel. A RGB/HSV color selector.
         Lilyldjwg       Colorizer. An inline color previewer.
+        Lilyldjwg       gui2term.py. A gui 2 term colorscheme generator.
         Fabien LOISON   color_picker. pygtk scripts.
 
         Vundle/Pathogen/Command-T/...and many other vim plugin authors.
 
-    Special Thanks to the Vim Author and it's developers:
+    Very Thanks to the Vim Author and it's developers:
         Bram Moolenaar <Bram@vim.org>...
 ------------------------------------------------------------------------------
 DEPENDENCIES                                        *colorv-dependencies*
@@ -724,9 +756,26 @@ DEPENDENCIES                                        *colorv-dependencies*
 ==============================================================================
 CHANGELOG                                           *colorv-changelog* 
 
+" 2.5.1 
+" DONE: 110902  add g:ColorV_prev_css to auto preview *.css files.
+"FIXED: 110902  fix v: colorv#hls2rgb() wrong 'h' input range for calc. 
+"FIXED: 110902  fix v: draw_pallette() wrong 'S' for hex error. 
+"FIXED: 110902  fix v: v3_hex2term() error calculating.
+" DONE: 110902  add glance image
+" DONE: 110902  format hex2txt() output with '%3d'.
+"FIXED: 110902  Change python regxp '\s' and '\\)' to '[ \t]' and '[)]'
+                to fix the matching bug.
+" DONE: 110901  add a:4 'circle' option for colorv#gen_list().
+" DONE: 110901  add timer while previewing buffer
+" DONE: 110831  Not matchadd() duplicated word. 
+                Not all word being highlighted: because same hex may be
+                differe ptn. use ptn group as dict name instead.
+" DONE: 110830  python version for preview() 
+
 " 2.5.0 Faster and More~
 " DONE: 110826  Stop change colorname if no relating colorname for to-color.
 " DONE: 110826  preview highlight effect with buffers not clash.
+" DONE: 110825  add colorv#rgb2cmyk() and colorv#cmyk2rgb()
 " DONE: 110825  8/16 terminal ColorV window supportted
 "FIXED: 110825  Missing '*' sometimes. 
                 Cause the position of s:pal_H is changing.

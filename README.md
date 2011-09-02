@@ -1,18 +1,28 @@
+##INTRO:##
 
-#INTRO:#
-
-**ColorV** is a color tool for Vim.
+**ColorV** is a vim plugin for dealing with colors.
  
-With this you can deal with colors easily.
+With this you can:
+
+        Choose colors 
+        Get color infos
+        Edit color-texts
+        Generate color lists
+        Preview color-texts in buffers
+        ...
+        
+        (color-text: e.g.,yellow/rgb(255,255,0)/#ff3300)
+
+**Take a glance:** ![Take a glance](http://i54.tinypic.com/2vi5h04.png)
     
 ###A Quick Start###
 
 * Open ColorV window to select colors. 
 
-        <leader>cv      ColorV with previous mode.
-        <leader>cm/c1   min mode:Less Space.
+        <leader>c1/cm   min mode:Less Space.
         <leader>c2      mid mode:Normal.
-        <leader>cx/c3   max mode:More Info.
+        <leader>c3/cx   max mode:More Info.
+        <leader>cv      ColorV with previous mode.
 
   **NOTE** 
 
@@ -74,7 +84,7 @@ With this you can deal with colors easily.
         <leader>cd
         (with '+python' compiled and pygtk2.0 included)
 
-##NEW IN 2.5:##
+###NEWS IN 2.5:###
 + **Faster**
 
 >       Core function optimized and rewrited with python.
@@ -96,14 +106,20 @@ With this you can deal with colors easily.
 >       Now ColorV works under Terminal(both 8/16/256 colors).   
 >       Set your '&t_Co' option (Default:8), if it supports more colors.
  
++ New in 2.5.1 : auto preview css files.(g:ColorV_prev_css)
 
   **NOTE** 
 
 >       If you have previous version of ColorV.
 >       You'd better delete it.
 >       because the file name have changed to 'colorv.vim'
+>
+  **NOTE** 
  
-#INSTALL:#
+>       If your vim is not compiled with 'python'. 
+>       Then it may be 3~5 times slower. 
+ 
+##INSTALL:##
     
   * Using [Vundle.vim](https://github.com/gmarik/vundle) (Recommend): 
   
@@ -120,8 +136,11 @@ With this you can deal with colors easily.
 >  Extract to $VIMFILE folder. ("~/.vim" for linux. "$HOME/vimfiles" for windows)
 
 >  Generate helptags. `:helptags ~/.vim/doc`
-
-##VIMRC EXAMPLE##
+ 
+>       If you got bugs or have suggestions.
+>       Post it at https://github.com/rykka/ColorV . 
+ 
+###VIMRC EXAMPLE###
 
 
 ```vim
