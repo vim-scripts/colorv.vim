@@ -1,6 +1,6 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "  Script: ColorV 
-"    File: autoload/ColorV.vim
+"    File: autoload/colorv.vim
 " Summary: A vim plugin for dealing with colors. 
 "  Author: Rykka.Krin Rykka.Krin(at)gmail.com>
 "    Home: 
@@ -1643,7 +1643,7 @@ function! s:update_global(hex) "{{{
             if s:is_open()
                 call s:exec(s:get_win_num() . " wincmd w")
             else
-                silent! exec splitLocation . ' split'
+                silent! exec spLoc . ' split'
                 silent! exec "buffer " . t:ColorVBufName
             endif
         endif
@@ -1973,27 +1973,37 @@ endfunction "}}}
 "}}}
 "WINS: "{{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! colorv#win(...) "{{{
-    "{{{ open window
-    let splitLocation = g:ColorV_win_pos == "top" ? "topleft " : "botright "
-
-    if !exists('t:ColorVBufName')
-        let t:ColorVBufName = g:ColorV.name
-        silent! exec splitLocation .' new'
-        silent! exec "edit ~/" . t:ColorVBufName
+function! s:open_win(name,...) "{{{
+    let spLoc= g:ColorV_win_pos == "top" ? "topleft " : "botright "
+    let spDirc= exists("a:1") && a:1 =="v" ? "v" : ""
+    let exists_buffer= bufnr(a:name)
+    if exists_buffer== -1
+        silent! exec spLoc .' '.spDirc.'new '. a:name
     else
-    	if s:is_open()
-            call s:exec(s:get_win_num() . " wincmd w")
+        let exists_window = bufwinnr(exists_buffer)
+        if exists_window != -1
+            if winnr() != exists_window
+                exe exists_window . "wincmd w"
+            endif
         else
-            silent! exec splitLocation . ' split'
-            silent! exec "buffer " . t:ColorVBufName
+            call s:go_buffer_win(a:name)
+            exe spLoc ." ".spDirc."split +buffer" . exists_buffer
         endif
-    endif "}}}
+    endif
+endfunction "}}}
+function! s:go_buffer_win(name) "{{{
+    if bufwinnr(bufnr(a:name)) != -1
+        exe bufwinnr(bufnr(a:name)) . "wincmd w"
+        return 1
+    else
+        return 0
+    endif
+endfunction "}}}
+function! s:win_setl() "{{{
     " local setting "{{{
+    setl buftype=nofile
     setl winfixwidth
     setl nocursorline nocursorcolumn
-    setl tw=0
-    setl buftype=nofile
     setl bufhidden=delete
     setl nolist
     setl noswapfile
@@ -2003,6 +2013,7 @@ function! colorv#win(...) "{{{
     setl nomodeline
     setl nonumber
     setl noea
+    setl tw=0
     setl foldcolumn=0
     setl sidescrolloff=0
     setl ft=ColorV
@@ -2010,6 +2021,9 @@ function! colorv#win(...) "{{{
         setl cc=
     endif
     call s:map_define() "}}}
+endfunction "}}}
+function! colorv#win(...) "{{{
+    call s:open_win("_ColorV_")
     " get hex "{{{
     if exists("a:2") 
     	"skip history if no new hex 
@@ -2070,11 +2084,19 @@ function! colorv#win(...) "{{{
     call s:draw_win(hex)
     call s:aug_init()
 endfunction "}}}
+function! s:check_win(name) "{{{
+    if bufnr('%') != bufnr(a:name)
+    	return 0
+    else
+    	return 1
+    endif
+endfunction "}}}
 function! s:draw_win(hex) "{{{
-    if expand('%') != g:ColorV.name
+    if !s:check_win('_ColorV_')
         call s:error("Not [ColorV] buffer.")
         return
     endif
+        
     let hex= s:fmt_hex(a:hex)
     
     setl ma
@@ -2173,7 +2195,7 @@ function! s:map_define() "{{{
     nmap <silent><buffer> = :call <SID>edit_at_cursor(-1,"+")<cr>
     nmap <silent><buffer> + :call <SID>edit_at_cursor(-1,"+")<cr>
     nmap <silent><buffer> - :call <SID>edit_at_cursor(-1,"-")<cr>
-    nmap <silent><buffer> _ :call <SID>edit_at_cursor(-1,"-")<cr>
+    " nmap <silent><buffer> _ :call <SID>edit_at_cursor(-1,"-")<cr>
 
     "edit name
     nmap <silent><buffer> na :call <SID>input_colorname()<cr>
@@ -2302,28 +2324,17 @@ function! s:get_win_num(...) "{{{
 endfunction "}}}
 
 function! colorv#exit_list_win() "{{{
-    if s:is_open("t:ColorVListBufName")
-        if winnr("$") != 1
-            call s:exec(s:get_win_num("t:ColorVListBufName") . " wincmd w")
-            close
-            call s:exec("wincmd p")
-        else
-            close
-        endif
+    if s:go_buffer_win('_ColorV-List_')
+    	close
     endif
 endfunction "}}}
 function! colorv#exit() "{{{
-    "close "{{{
-    if s:is_open()
-        if winnr("$") != 1
-            call s:exec(s:get_win_num() . " wincmd w")
-            close
-            call s:exec("wincmd p")
-        else
-            close
-        endif
-    endif "}}} 
-    
+    if s:go_buffer_win('_ColorV_')
+    	close
+    endif
+
+
+
     "_call "{{{
     if exists("s:exit_call") && s:exit_call ==1 && exists("s:exit_func")
     	if exists("s:exit_arg") 
@@ -3864,13 +3875,17 @@ function! colorv#cursor_win(...) "{{{
         let nums=exists("a:3") ? a:3 : ""
         let step=exists("a:4") ? a:4 : ""
         call s:echo("Will Generate color list with [".pat."].")
-        let list=s:winlist_generate(hex,type,nums,step)
-        call colorv#list_win(list)
+        " let list=s:winlist_generate(hex,type,nums,step)
+        " call colorv#list_win(list)
+        call colorv#gen_win(hex,type,nums,step)
+        return
     elseif exists("a:1") && a:1==4
         let s:ColorV.change_word=1
     else
         let s:ColorV.change_word=0
     	let s:ColorV.change_all=0
+        call colorv#win(s:mode,hex)
+        return
     endif
     
     "change2
@@ -3910,20 +3925,7 @@ endfunction "}}}
 " LIST: "{{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! colorv#list_win(...) "{{{
-    let splitLocation = "botright "
-    if !exists('t:ColorVListBufName')
-        let t:ColorVListBufName = g:ColorV.listname
-        silent! exec splitLocation . ' vnew'
-        silent! exec "edit " . t:ColorVListBufName
-    else
-    	if s:is_open("t:ColorVListBufName")
-            call s:exec(s:get_win_num("t:ColorVListBufName") . " wincmd w")
-        else
-            silent! exec splitLocation . ' vsplit'
-            silent! exec "buffer " . t:ColorVListBufName
-        endif
-    endif
-
+    call s:open_win("_ColorV-List_","v")
     
     " local setting "{{{
     setl winfixwidth
@@ -3971,8 +3973,8 @@ function! colorv#list_and_colorv(...) "{{{
     call colorv#exit()
     call colorv#list_win(list)
     call colorv#win(s:mode)
-    if s:is_open("t:ColorVListBufName")
-        call s:exec(s:get_win_num("t:ColorVListBufName") . " wincmd w")
+    if s:is_open("_ColorV-List_")
+        call s:exec(s:get_win_num("_ColorV-List_") . " wincmd w")
     endif
 endfunction "}}}
 function! s:draw_list_buf(list) "{{{
@@ -4029,7 +4031,7 @@ function! colorv#yiq_list_gen(hex,...) "{{{
     let type=exists("a:1") && !empty(a:1) ? a:1 : s:gen_def_type
     let nums=exists("a:2") && !empty(a:2) ? a:2 : s:gen_def_nums 
     let step=exists("a:3") && !empty(a:3) ? a:3 : s:gen_def_step
-    let circle=exists("a:4") && !empty(a:4) ? a:4 : 1
+    let circle=exists("a:4") ? a:4 : 1
     let [y,i,q]=colorv#rgb2yiq(colorv#hex2rgb(hex))
     let [h,s,v]=colorv#hex2hsv(hex)
     let hex_list=[]
@@ -4207,7 +4209,7 @@ function! colorv#list_gen(hex,...) "{{{
     let type=exists("a:1") && !empty(a:1) ? a:1 : s:gen_def_type
     let nums=exists("a:2") && !empty(a:2) ? a:2 : s:gen_def_nums 
     let step=exists("a:3") && !empty(a:3) ? a:3 : s:gen_def_step
-    let circle=exists("a:4") && !empty(a:4) ? a:4 : 1
+    let circle=exists("a:4") ? a:4 : 1
     let [h,s,v]=colorv#hex2hsv(hex)
     let hex_list=[]
     for i in range(nums)
@@ -4358,7 +4360,12 @@ function! colorv#gen_win(hex,...) "{{{
     else
         let list=s:winlist_generate(hex,type,nums,step)
     endif
+    call colorv#exit()
     call colorv#list_win(list)
+    call colorv#win(s:mode)
+    if s:is_open("t:ColorVListBufName")
+        call s:exec(s:get_win_num("t:ColorVListBufName") . " wincmd w")
+    endif
 endfunction "}}}
 "}}}
 " PREV: "{{{1
@@ -4523,6 +4530,11 @@ if g:ColorV_prev_css==1 "{{{
         au! bufwritepost *.css call colorv#preview("S")
     aug END
 endif "}}}
+augroup ColorVnew "{{{
+    autocmd!
+    autocmd BufNewFile _ColorV_ call s:win_setl()
+    autocmd BufNewFile _ColorV-List_ call s:win_setl()
+augroup END "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "}}}
 let &cpo = s:save_cpo

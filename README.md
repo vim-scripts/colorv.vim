@@ -65,7 +65,7 @@ With this you can:
 
 * Generate 'Monochromatic' (and more) colorscheme List with color-text.
  
-        <leader>cgm
+        <leader>cg1 or g1 in ColorV window
 
 * Copy the color in the ColorV window directly.
 
@@ -113,11 +113,6 @@ With this you can:
 >       If you have previous version of ColorV.
 >       You'd better delete it.
 >       because the file name have changed to 'colorv.vim'
->
-  **NOTE** 
- 
->       If your vim is not compiled with 'python'. 
->       Then it may be 3~5 times slower. 
  
 ##INSTALL:##
     
@@ -127,7 +122,7 @@ With this you can:
 
 >  Run `:BundleInstall` to install.
 
->  And update ColorV eaisly by `:BundleInstall!`
+>  And update ColorV easily by `:BundleInstall!`
 
   * Using [ColorV on Vim.org](http://www.vim.org/scripts/script.php?script_id=3597) 
 
@@ -137,8 +132,16 @@ With this you can:
 
 >  Generate helptags. `:helptags ~/.vim/doc`
  
->       If you got bugs or have suggestions.
->       Post it at https://github.com/rykka/ColorV . 
+  **NOTE** 
+
+>       If you got any bugs or  suggestions. 
+>       Please post it at https://github.com/Rykka/ColorV . 
+ 
+  **NOTE** 
+ 
+>       If your vim is not compiled with 'python'. 
+>       Or you OS have not install python.
+>       Then it may be 3~5 times slower. 
  
 ###VIMRC EXAMPLE###
 

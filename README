@@ -6,9 +6,14 @@ This is a mirror of http://www.vim.org/scripts/script.php?script_id=3597
         Get color infos
         Edit color-texts
         Generate color lists
+        Save your copied colors
         Preview color-texts in buffers
+        Pick colors on screen(python2.7 and pygtk2 module needed.)
         ...
-    (color-text: e.g.,yellow/rgb(255,255,0)/#ff3300)
+    (color-text: e.g. yellow,rgb(255,255,0),#ff3300)
 
-    Take a glance: http://i54.tinypic.com/2vi5h04.png
+    Take a glance: http://i55.tinypic.com/2jg7yu0.jpg
+    Terminal(256): http://i56.tinypic.com/kb4tch.png
+
+    Where to Start:  '<leader>cv' or :ColorV
 
