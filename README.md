@@ -9,25 +9,30 @@ With this you can:
         Edit color-texts
         Generate color lists
         Preview color-texts in buffers
+        Pick colors on screen(python2.7 and pygtk2 module needed.)
         ...
         
-        (color-text: e.g.,yellow/rgb(255,255,0)/#ff3300)
+        (color-text: e.g. yellow,rgb(255,255,0),#ff3300)
 
-**Take a glance:** ![Take a glance](http://i54.tinypic.com/2vi5h04.png)
+**Take a glance:** ![Take a glance](http://i55.tinypic.com/2jg7yu0.jpg)
+
+**Terminal(256):** [Terminal](http://i56.tinypic.com/kb4tch.png)
+
+**Where to Start:**  `<leader>cv` or `:ColorV`
     
-###A Quick Start###
+###Quick Start###
 
 * Open ColorV window to select colors. 
 
-        <leader>c1/cm   min mode:Less Space.
-        <leader>c2      mid mode:Normal.
-        <leader>c3/cx   max mode:More Info.
-        <leader>cv      ColorV with previous mode.
+        <leader>c1/cm  or :ColorVmin    min mode:Less Space.
+        <leader>c2     or :ColorVmid    mid mode:Normal.
+        <leader>c3/cx  or :ColorVmax    max mode:More Info.
+        <leader>cv     or :ColorV       ColorV with previous mode.
 
   **NOTE** 
 
 >       <leader> is a key can change in vimrc. Default is "\".
->       Mappings may not exist if it has been used by other plugins.
+>       Mappings may not exist if it has been used.
 >       Then you should redefine it in your vimrc.
 
 * Choose a color in ColorV window.
@@ -106,8 +111,8 @@ With this you can:
 >       Now ColorV works under Terminal(both 8/16/256 colors).   
 >       Set your '&t_Co' option (Default:8), if it supports more colors.
  
-+ New in 2.5.1 : auto preview css files.(g:ColorV_prev_css)
-+ New in 2.5.2 : fix some bugs in mac/windows/terminal.
++ New in 2.5.1 : Auto preview css files.(g:ColorV_prev_css)
++ New in 2.5.2 : Fix some bugs in mac/windows/terminal.
 
 ##INSTALL:##
     
@@ -139,17 +144,25 @@ With this you can:
 >       And you can report bugs and suggestions at
 >       https://github.com/Rykka/ColorV/issues
  
+>       If you got troubles, check ':h colorv-troubleshooting' first.
+>
 ###VIMRC EXAMPLE###
 
 
 ```vim
-"remap the ColorVchange command 
-nmap <silent> <leader>cr :ColorVchange<CR>
+" define your own global leader for ColorV insead for '<leader>c'
+"let g:ColorV_global_leader= '<leader>f'
+" define your mapping for change color-text
+nmap <silent> <leader>cr :ColorVsub<CR>
 
-"use HLS colorspace instead of HSV
-let g:ColorV_win_space="hls"  
-"use YIQ colorspace for generating color list
-let g:ColorV_gen_space="yiq" 
-"Stop coloring colornames like 'Black','Navy','white'
-let g:ColorV_view_name=0
+" ColorV window position "bot" or "top"
+"let g:ColorV_win_pos="top"  
+" Use HLS colorspace instead of HSV
+"let g:ColorV_win_space="hls"  
+" Use YIQ colorspace for generating color list
+"let g:ColorV_gen_space="yiq" 
+" Stop coloring colornames like 'Black','Navy','white'
+"let g:ColorV_view_name=0
+" No Auto preview for css files
+"let g:ColorV_prev_css=0
 ```

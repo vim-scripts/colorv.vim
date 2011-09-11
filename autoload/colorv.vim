@@ -2,37 +2,25 @@
 "  Script: ColorV 
 "    File: autoload/colorv.vim
 " Summary: A vim plugin for dealing with colors. 
-"  Author: Rykka.Krin Rykka.Krin(at)gmail.com>
-"    Home: 
-" Version: 2.5.2 
-" Last Update: 2011-09-04
+"  Author: Rykka.Krin <Rykka.Krin(at)gmail.com>
+"    Home: https://github.com/Rykka/ColorV
+" Version: 2.5.3 
+" Last Update: 2011-09-11
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:save_cpo = &cpo
 set cpo&vim
 
 if version < 700 || exists("g:ColorV_loaded")
     finish
+else
+    let g:ColorV_loaded = 1
 endif
-let g:ColorV_loaded = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "GVAR: "{{{1 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ColorV={}
-let g:ColorV.name="_ColorV_"
-let g:ColorV.listname="_ColorV-List_"
-let g:ColorV.ver="2.5.2.2"
-
-let g:ColorV.HEX="ff0000"
-let g:ColorV.RGB={'R':255,'G':0,'B':0}
-let g:ColorV.HSV={'H':0,'S':100,'V':100}
-let g:ColorV.HLS={'H':0,'L':50,'S':100}
-let g:ColorV.YIQ={'Y':30,'I':60,'Q':21}
-let g:ColorV.rgb=[255,0,0]
-let g:ColorV.hls=[0,50,100]
-let g:ColorV.yiq=[30,60,21]
-let g:ColorV.hsv=[0,100,100]
-let g:ColorV.NAME="Red"
+let g:ColorV.ver="2.5.3.0"
 
 "debug 
 if !exists("g:ColorV_debug")
@@ -72,6 +60,19 @@ else
         let g:ColorV_prev_css=0
     endif
 endif
+
+let g:ColorV.name="_ColorV_"
+let g:ColorV.listname="_ColorV-List_"
+let g:ColorV.HEX="ff0000"
+let g:ColorV.RGB={'R':255,'G':0,'B':0}
+let g:ColorV.HSV={'H':0,'S':100,'V':100}
+let g:ColorV.HLS={'H':0,'L':50,'S':100}
+let g:ColorV.YIQ={'Y':30,'I':60,'Q':21}
+let g:ColorV.rgb=[255,0,0]
+let g:ColorV.hls=[0,50,100]
+let g:ColorV.yiq=[30,60,21]
+let g:ColorV.hsv=[0,100,100]
+let g:ColorV.NAME="Red"
 "}}}
 "SVAR: {{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1609,7 +1610,7 @@ function! s:update_global(hex) "{{{
             call call(s:update_func,[])
         endif
         " BACK to COLORV window
-        if !exists('t:ColorVBufName')
+        if !s:go_buffer_win(g:ColorV.name)
             call s:error("ColorV window.NO update_call")
             if exists("s:update_call") 
                 if exists("s:update_arg") 
@@ -1619,13 +1620,6 @@ function! s:update_global(hex) "{{{
                 unlet s:update_func
             endif
             return -1
-        else
-            if s:is_open()
-                call s:exec(s:get_win_num() . " wincmd w")
-            else
-                silent! exec spLoc . ' split'
-                silent! exec "buffer " . t:ColorVBufName
-            endif
         endif
     endif
 endfunction "}}}
@@ -1954,7 +1948,7 @@ endfunction "}}}
 "WINS: "{{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! colorv#win(...) "{{{
-    call s:open_win("_ColorV_")
+    call s:open_win(g:ColorV.name)
     call s:win_setl()
     setl ft=ColorV
     call s:map_define() 
@@ -2282,40 +2276,18 @@ function! s:exec(cmd) "{{{
     exec a:cmd
     let &ei = old_ei
 endfunction "}}}
-function! s:is_open(...) "{{{
-    if exists("a:1")
-        return s:get_win_num(a:1) != -1
-    else
-        return s:get_win_num() != -1
-    endif
-endfunction "}}}
-function! s:get_win_num(...) "{{{
-    if exists("a:1")
-    	if exists(a:1)
-            return bufwinnr(eval(a:1))
-        else
-            return -1
-        endif
-    else
-        if exists("t:ColorVBufName")
-            return bufwinnr(t:ColorVBufName)
-        else
-            return -1
-        endif
-    endif
-endfunction "}}}
 
 function! colorv#exit_list_win() "{{{
-    if s:go_buffer_win('_ColorV-List_')
+    if s:go_buffer_win(g:ColorV.listname)
     	close
     endif
 endfunction "}}}
 function! colorv#exit() "{{{
-    if s:go_buffer_win('_ColorV_')
+    if s:go_buffer_win(g:ColorV.name)
     	close
+    else
+    	return -1
     endif
-
-
 
     "_call "{{{
     if exists("s:exit_call") && s:exit_call ==1 && exists("s:exit_func")
@@ -2362,9 +2334,9 @@ color_dlg.colorsel.set_current_color(c_set)
 if color_dlg.run() == gtk.RESPONSE_OK:
     clr = color_dlg.colorsel.get_current_color()
     c_hex = rgb2hex([clr.red/257,clr.green/257,clr.blue/257])
+    vim.command("ColorV "+c_hex)
     
 color_dlg.destroy()
-vim.command("ColorV "+c_hex)
 EOF
 endfunction "}}}
 
@@ -2514,7 +2486,7 @@ function! s:seq_echo(txt_list) "{{{
     let idx=0
     for txt in txt_list
         if s:fmod(s:seq_num,len(txt_list)) == idx
-            echo "[".idx."]" txt
+            call s:echo(idx.": ".txt)
             break
         endif
         let idx+=1
@@ -2524,31 +2496,43 @@ endfunction "}}}
 
 function! s:caution(msg) "{{{
     echohl Modemsg
-    exe "echom \"[Caution] ".escape(a:msg,'"')."\""
+    redraw
+    exe "echon '[Caution]' "
     echohl Normal
+    exe "echon ' ".escape(a:msg,'"')."'"
 endfunction "}}}
 function! s:warning(msg) "{{{
     echohl Warningmsg
-    exe "echo \"[Warning] ".escape(a:msg,'"')."\""
+    redraw
+    exe "echon '[Warning]' "
     echohl Normal
+    exe "echon ' ".escape(a:msg,'"')."'"
 endfunction "}}}
 function! s:error(msg) "{{{
     echohl Errormsg
-    exe "echom \"[Error] ".escape(a:msg,'"')."\""
+    redraw
+    exe "echon '[Error]' "
     echohl Normal
+    exe "echon ' ".escape(a:msg,'"')."'"
 endfunction "}}}
 function! s:echo(msg) "{{{
     try 
-        exe "echo \"[Note] ".escape(a:msg,'\"')."\""
+        echohl Comment
+        redraw
+        exe "echon '[Note]' "
+        echohl Normal
+        exe "echon ' ".escape(a:msg,'"')."'"
     catch /^Vim\%((\a\+)\)\=:E488/
         call s:debug("Trailing character.")  
     endtry
 endfunction "}}}
+
 function! s:debug(msg) "{{{
     if g:ColorV_debug!=1
     	return
     endif
     echohl Errormsg
+    redraw
     echom "[Debug] ".escape(a:msg,'"')
     echohl Normal
 endfunction "}}}
@@ -3359,7 +3343,7 @@ def txt2hex(txt):
                     hex_list.append([hx,x.start(),x.end()-x.start(),x.group(),key])
                 elif key=="HSV" or key=="HSVA" :
                     h,s,v=int(x.group('H')),int(x.group('S')),int(x.group('V'))
-                    hx=rgb2hex(hls2rgb([h,l,s]))
+                    hx=rgb2hex(hls2rgb([h,s,v]))
                     hex_list.append([hx,x.start(),x.end()-x.start(),x.group(),key])
                 elif key=="NAME":
                     hx=name2hex(x.group())
@@ -3872,7 +3856,7 @@ function! colorv#cursor_win(...) "{{{
     
     "change2
     if exists("a:1") && (a:1==2 || a:1==1) && exists("a:2")
-            \ && a:2=~'RGB\|RGBA\|RGBP\|RGBAP\|HEX\|HEX0\|NAME\|NS6\|HSV'
+            \ && a:2=~'RGB\|RGBA\|RGBP\|RGBAP\|HEX\|HEX0\|NAME\|NS6\|HSV\|HSL'
         let s:ColorV.change2=a:2
     elseif exists("s:ColorV.change2")
         unlet s:ColorV.change2
@@ -3907,7 +3891,7 @@ endfunction "}}}
 "LIST: "{{{1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! colorv#list_win(...) "{{{
-    call s:open_win("_ColorV-List_","v")
+    call s:open_win(g:ColorV.listname,"v")
     
     " local setting "{{{
     call s:win_setl()
@@ -3936,9 +3920,7 @@ function! colorv#list_and_colorv(...) "{{{
     call colorv#exit()
     call colorv#list_win(list)
     call colorv#win(s:mode)
-    if s:is_open("_ColorV-List_")
-        call s:exec(s:get_win_num("_ColorV-List_") . " wincmd w")
-    endif
+    call s:go_buffer_win(g:ColorV.listname)
 endfunction "}}}
 function! s:draw_list_buf(list) "{{{
     setl ma
@@ -4322,12 +4304,10 @@ function! colorv#gen_win(hex,...) "{{{
     else
         let list=s:winlist_generate(hex,type,nums,step)
     endif
-    call colorv#exit()
+    " call colorv#exit()
     call colorv#list_win(list)
-    call colorv#win(s:mode)
-    if s:is_open("t:ColorVListBufName")
-        call s:exec(s:get_win_num("t:ColorVListBufName") . " wincmd w")
-    endif
+    " call colorv#win(s:mode)
+    call s:go_buffer_win(g:ColorV.listname)
 endfunction "}}}
 "1}}}
 "PREV: "{{{1
