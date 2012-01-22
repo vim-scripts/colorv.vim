@@ -1,18 +1,14 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=3597
 
-    ColorV is a vim plugin for dealing with colors.
-    With this you can:
-        Choose colors 
-        Get color infos
-        Edit color-texts
-        Generate color lists
-        Preview color-texts in buffers
-        Pick colors on screen(python2.7 and pygtk2 module needed.)
-        ...
-    (color-text: e.g. yellow,rgb(255,255,0),#ff3300)
+   *ColorV* is a Color tool in Vim.
 
-    Take a glance: http://i55.tinypic.com/2jg7yu0.jpg
-    Terminal(256): http://i56.tinypic.com/kb4tch.png
+    With it you can:
+        Choose, Change, Show, Preview, Generate, Pickup, Cache ... colors.
 
-    Where to Start:  '<leader>cv' or :ColorV
+    To Start: 
+        :ColorV
+
+     Screenshot: http://rykka.is-programmer.com/posts/31819
+
+     Post issues at https://github.com/Rykka/ColorV/issues
 
