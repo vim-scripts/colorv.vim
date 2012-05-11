@@ -1,4 +1,4 @@
-*colorv.txt*    Easier color handling.
+*colorv.txt*    Easier colors handling.
 
 
               _________     ______            ___    __               ~
@@ -31,7 +31,7 @@
 ==============================================================================
  1. INTRO                                      *colorv-intro*
 
-   *ColorV* is a vim plugin tries to make handling colors easier.
+   *ColorV* is a vim plugin tries to make colors handling easier.
    
     For example:
     When editing text like '#9370D8' or 'LightSlateGray' or 'rgb(216,112,147)'
@@ -49,7 +49,7 @@
 
     Screenshot: http://img.ly/gC9p
 
-    Post issues at https://github.com/Rykka/ColorV/issues 
+    Post issues at https://github.com/Rykka/colorv.vim/issues 
 
 ------------------------------------------------------------------------------
  2. INSTALL                                    *colorv-install*
@@ -57,7 +57,7 @@
 1.Using [Vundle.vim] https://github.com/gmarik/vundle 
 
     Add this Line to your vimrc
-    `Bundle 'Rykka/ColorV'` 
+    `Bundle 'Rykka/colorv.vim'` 
  
 2.Using [Vim.org] http://www.vim.org/scripts/script.php?script_id=3597
 
@@ -65,7 +65,7 @@
     :helptags ~/.vim/doc
  
     NOTE   Get Latest version
-           https://github.com/Rykka/ColorV/
+           https://github.com/Rykka/colorv.vim/
 
 ==============================================================================
  3. QUICKSTART                                 *colorv-quickstart*
@@ -292,7 +292,8 @@ will change all color-text in current buf after closing the ColorV window.
     Size~
     s/S           toggle ColorV window size (max/mid/min)
 
-    mm           add color to mark list, list rect shows in max size.
+    M            add color to mark list, list rect shows in max size.
+    mm           add color to mark list, which one cursor is in.
     dd           rmv color in mark list, which one cursor is in.
     
     Copy~
@@ -605,6 +606,7 @@ will change all color-text in current buf after closing the ColorV window.
  11. CHANGELOG                                 *colorv-changelog* 
 
 " 2.5.6~
+"FIXED: 2012-04-27 add del_mark() .
 "FIXED: 2012-04-25 fix prev_list() ,clear hl-prev as expected.
 "FIXED: 2012-04-24 fix nametxt2hex() split ptn. use [^0-9A-Za-z-_].
 "FIXED: 2012-04-24 fix autopreview/previewarea commmand

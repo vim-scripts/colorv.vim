@@ -1,11 +1,11 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "  Script: ColorV
 "    File: autoload/colorv.vim
-" Summary: A vim plugin tries to make handling colors easier.
-"  Author: Rykka <Rykka10(at)gmail.com>
+" Summary: A vim plugin to make colors handling easier.
+"  Author: Rykka G.Forest <Rykka10(at)gmail.com>
 "    Home: https://github.com/Rykka/ColorV
 " Version: 2.5.6
-" Last Update: 2012-04-26
+" Last Update: 2012-05-07
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:save_cpo = &cpo
 set cpo&vim
@@ -298,7 +298,7 @@ let s:valline_list= []
 " miscs "{{{
 let s:skip_his_rec_upd = 0
 let s:his_mkd_list=exists("s:his_mkd_list")
-            \ ? s:his_mkd_list : []
+            \ ? s:his_mkd_list : repeat([1],20)
 let s:his_set_list=exists("s:his_set_list")
             \ ? s:his_set_list : ['ff0000']
 
@@ -911,7 +911,9 @@ function! s:draw_mark_rect() "{{{
         else
             let t="AAAAAA"
         endif
-        let cpd_color= len>i ? s:his_mkd_list[-1-i] : t
+        " let cpd_color= len>i ? s:his_mkd_list[-1-i] : t
+        let cpd_color= exists("s:his_mkd_list[-1-i]") &&
+                    \s:his_mkd_list[-1-i]=~'\x\{6}' ? s:his_mkd_list[-1-i] : t
         call add(clr_list,cpd_color)
     endfor
     call s:draw_multi_rect(s:his_cpd_rect,clr_list)
@@ -1458,7 +1460,8 @@ function! s:set_map() "{{{
     nmap <silent><buffer> S :call <SID>size_toggle()<cr>
     nmap <silent><buffer> s :call <SID>size_toggle()<cr>
 
-    nmap <silent><buffer> mm :call <SID>mark()<CR>
+    nmap <silent><buffer> M  :call <SID>mark()<CR>
+    nmap <silent><buffer> mm :call <SID>set_in_pos("M")<CR>
     nmap <silent><buffer> dd :call <SID>set_in_pos("D")<cr>
 
     nmap <silent><buffer> <tab> W
@@ -1473,7 +1476,7 @@ function! s:set_map() "{{{
     nmap <silent><buffer> <ScrollWheelDown> :call <SID>edit_at_cursor("-")<cr>
 
     "edit name
-    nmap <silent><buffer> nn :call colorv#list_win)<cr>
+    nmap <silent><buffer> nn :call colorv#list_win()<cr>
     nmap <silent><buffer> na :call <SID>input_colorname()<cr>
     nmap <silent><buffer> ne :call <SID>input_colorname()<cr>
     nmap <silent><buffer> nx :call <SID>input_colorname("X11")<cr>
@@ -1954,7 +1957,7 @@ function! s:set_in_pos(...) "{{{
     let [rc_x,rc_y,rc_w,rc_h]=s:his_cpd_rect
     
     if s:size!="max" || l!=rc_y || c<rc_x  || c>(rc_x+rc_w*18-1)
-        if a:0 && a:1 =="D"
+        if a:0 && ( a:1 =="D" || a:1 =="M")
             return
         endif
     endif
@@ -1997,7 +2000,7 @@ function! s:set_in_pos(...) "{{{
         let hex=colorv#hsv2hex([h,s,v])
         call s:draw_win(hex)
         return
-    "his_line "{{{3
+    "mrk_line "{{{3
     elseif s:size=="max" && l==rc_y &&  c>=rc_x  && c<=(rc_x+rc_w*18-1)
         for i in range(18)
             if c<rc_x+rc_w*(i+1)
@@ -2010,13 +2013,16 @@ function! s:set_in_pos(...) "{{{
                     if a:0 && a:1 == "D"
                         call s:delmark(-1-i)
                         return
+                    elseif a:0 && a:1 == "M"
+                        call s:mark(-1-i)
+                        return
                     else
-                        call s:echo("HEX(Copied history ".(i)."): ".hex_h)
+                        call s:echo("HEX(Marked history ".(i)."): ".hex_h)
                         call s:draw_win(hex_h)
                         return
                     endif
                 else
-                    call s:echo("No Copied Color here.")
+                    call s:echo("No Marked Color here.")
                     return
                 endif
             endif
@@ -2513,8 +2519,14 @@ function! s:copy(...) "{{{
         let @" = l:cliptext
     endif
 endfunction "}}}
-function! s:mark() "{{{
+function! s:mark(...) "{{{
     "no duplicated next color
+    if a:0
+        let s:his_mkd_list[a:1] = g:colorv.HEX
+        call s:draw_mark_rect()
+        call s:echo("add color to mark list rect :".g:colorv.HEX)
+        return
+    endif
     if string(get(s:his_mkd_list,-1))!=string(g:colorv.HEX)
         call add(s:his_mkd_list,g:colorv.HEX)
         if s:size=="max"
@@ -2524,7 +2536,8 @@ function! s:mark() "{{{
     endif
 endfunction "}}}
 function! s:delmark(n) "{{{
-    let h = remove(s:his_mkd_list,a:n)
+    let h = s:his_mkd_list[a:n]
+    let s:his_mkd_list[a:n] = 1
     if s:size=="max"
         call s:draw_mark_rect()
     endif
@@ -2687,6 +2700,7 @@ function! s:prev_list(list) "{{{
 
         " NOTE: we should clear the hl-grp
         " and only clear the hl-grp not used anymore.
+        "                grp      buf:num
         " s:pgrp_dict: {cv_prv_xx: {1:1,2:1},cv_prv_xx:{1:1,3:1}...}
 
         " we dont' have this grp.
@@ -3179,15 +3193,14 @@ function! colorv#load_cache() "{{{
         call s:debug("Could not load cache. ".v:exception)
         return -1
     endtry
+    let his_list = []
     for i in CacheStringList
         if i =~ 'MAKRED_COLOR'
             let txt = matchstr(i,'MAKRED_COLOR\s*\zs.*\ze$')
             let his_list = split(txt)
         endif
     endfor
-    if exists("his_list") && !empty(his_list)
-        let s:his_mkd_list=deepcopy(his_list)
-    endif
+    let s:his_mkd_list =  repeat([1],(18-len(his_list))) + his_list
 endfunction "}}}
 function! colorv#init() "{{{
     call colorv#default("g:colorv_debug"         , 0                )
