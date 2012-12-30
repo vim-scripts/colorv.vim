@@ -1,23 +1,52 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=3597
 
-**ColorV** is a vim plugin tries to make colors handling easier.
-   
-    For example:
-    When editing text like '#9370D8' or 'LightSlateGray' or 'rgb(216,112,147)'
-    We want to view it's actual color, and pick the actual color we want.
+Intro
+=====
 
-    ColorV helps you doing this.
+*ColorV* is a color view/pick/edit/design/scheme tool in vim.
 
-    Press '<leader>ce'(':ColorVEdit') in 'LightSlateGray',
-    this will open ColorV window showing the text's color.
-    And after picking a color and close the window,
-    The text will be changed to your picked color.
+It makes handling colors much easier.  
 
-    Features:
-    View, Edit, Preview, Generate, Pick, Mark ... Colors and more.
+With it, you can:
 
-    Screenshot: http://img.ly/images/4316118/full
+View colors Easier
+    ':ColorV' (<leader>cv): show ColorV window
+
+    ':ColorVView' (<leader>cw): show ColorV window with color text under cursor.
+
+    ':ColorVPreview' (<leader>cpp): Preview colors in current buffer
+
+Edit colors Easier
+    ':ColorVEdit' (<leader>ce): Edit color text under cursor
+
+    ':ColorVEditAll' (<leader>cE): Edit color text under cursor and change all in current buffer.
+
+    ':ColorVInsert' (<leader>cii): Insert color with ColorV window.
+
+Design Colors Easier
+    ':ColorVName' (<leader>cn): show color name list window.
+
+    ':ColorVList Hue' (<leader>cgh) generate Hue list with color text under cursor.
+
+    ':ColorVTurn2 {hex1} {hex2}' (<leader>cgg) generate Hue list from hex1 to hex2.
+
+    ':ColorVPicker' (<leader>cd): show a GUI color picker.
+
+Design Schemes Easier
+    ':ColorVScheme' (<leader>css) Fetch scheme from Kuler or ColourLover
+
+    ':ColorVSchemeFav' (<leader>csf) Show Faved schemes
+
+    ':ColorVSchemeNew' (<leader>csn) Create a new scheme
+
+And More
+    You can even use it under 8/256 color terminal.
+
+Get latest and Post issues at https://github.com/Rykka/colorv.vim
+
+ScreenShot:
+
+.. image:: http://i.minus.com/iF5Cd8D74Rfls.png
 
 
-Post issues at https://github.com/Rykka/colorv.vim/issues 
 
