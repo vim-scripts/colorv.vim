@@ -31,7 +31,7 @@
 ==============================================================================
  1. INTRO                                      *colorv-intro*
 
-*ColorV* is a color picker/editor/design tool in vim.
+*ColorV* is a color view/pick/edit/design/scheme tool in vim.
 
 It makes handling colors much easier.  
 
@@ -54,7 +54,7 @@ Edit colors Easier~
 Design Colors Easier~
     ``:ColorVName`` (<leader>cn): show color name list window.
 
-    ``:ColorVList Hue`` (<leader>cg1) generate Hue list with color text under cursor.
+    ``:ColorVList Hue`` (<leader>cgh) generate Hue list with color text under cursor.
 
     ``:ColorVTurn2 {hex1} {hex2}`` (<leader>cgg) generate Hue list from hex1 to hex2.
 
@@ -67,20 +67,25 @@ Design Schemes Easier~
 
     ``:ColorVSchemeNew`` (<leader>csn) Create a new scheme
 
+And More~
+    You can even use it under 8/256 color terminal.
 
 Get latest and Post issues at https://github.com/Rykka/colorv.vim
 
 ScreenShot:
 
-.. image:: http://i7.minus.com/iZJ5dh9waOZlu.png
+.. image:: http://i5.minus.com/i9DpLvJkrztHq.png
 
 ------------------------------------------------------------------------------
  2. INSTALL                                    *colorv-install*
 
 1.Using [Vundle.vim] https://github.com/gmarik/vundle 
 
-    Add this Line to your vimrc
-    `Bundle 'Rykka/colorv.vim'` 
+  Add this Line to your vimrc::
+
+    Bundle 'Rykka/colorv.vim' 
+    " needed for fetching schemes online.
+    Bundle 'mattn/webapi-vim'
  
 2.Using [Vim.org] http://www.vim.org/scripts/script.php?script_id=3597
 
@@ -89,6 +94,10 @@ ScreenShot:
  
     NOTE   Get Latest version
            https://github.com/Rykka/colorv.vim/
+
+    NOTE   webapi.vim_ is needed for fetching schemes online.
+
+.. _webapi.vim: https://github.com/mattn/webapi-vim 
 
 ==============================================================================
  3. QUICKSTART                                 *colorv-quickstart*

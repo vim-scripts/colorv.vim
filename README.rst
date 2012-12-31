@@ -1,17 +1,18 @@
-############################
-ColorV: Colors in Vim 
-############################
+#############################
+ColorV: A Powerful color tool
+#############################
 
 :Author: Rykka G.F
 :Update: 2012-12-30
-:Version: 3.0
+:Version: 3.0.1
 :Github: https://github.com/Rykka/colorv.vim
+:Vim.org: http://www.vim.com/scripts/script.php?script_id=3597
 
 
 Intro
 =====
 
-**ColorV** is a color picker/editor/design tool in vim.
+**ColorV** is a color view/pick/edit/design/scheme tool in vim.
 
 It makes handling colors much easier.  
 
@@ -34,7 +35,7 @@ Edit colors Easier
 Design Colors Easier
     ``:ColorVName`` (<leader>cn): show color name list window.
 
-    ``:ColorVList Hue`` (<leader>cg1) generate Hue list with color text under cursor.
+    ``:ColorVList Hue`` (<leader>cgh) generate Hue list with color text under cursor.
 
     ``:ColorVTurn2 {hex1} {hex2}`` (<leader>cgg) generate Hue list from hex1 to hex2.
 
@@ -47,15 +48,14 @@ Design Schemes Easier
 
     ``:ColorVSchemeNew`` (<leader>csn) Create a new scheme
 
+And More
+    You can even use it under 8/256 color terminal.
 
 Get latest and Post issues at https://github.com/Rykka/colorv.vim
 
-On Screen
-----------
-
 ScreenShot:
 
-.. image:: http://i7.minus.com/iZJ5dh9waOZlu.png
+.. image:: http://i5.minus.com/i9DpLvJkrztHq.png
 
 Install
 -------
@@ -64,9 +64,14 @@ Install
   Add this line to your vimrc::
  
     Bundle 'Rykka/colorv.vim'
+    " needed for fetching schemes online.
+    Bundle 'mattn/webapi-vim'
 
 * Using downloaded zip/tar.gz file. 
   Just extract it to your ``.vim`` folder .
+
+:NOTE: webapi.vim_ is needed for fetching schemes online.
+
 
 :NOTE: Make sure ``filetype plugin on`` and ``syntax on`` is in your vimrc
 
@@ -188,10 +193,19 @@ Todo and Done
 TODO
 ~~~~
 
-* 3.1: add upload, maybe a site to uplad to is needed.
+* 3.1: 
+ 
+  - add upload, maybe a site to uplad to is needed.
+  - ColorVTurn2 should use cursor color text if hex1 omitted.
 
 Done
 ~~~~
+
+* 3.0.1:
+
+  - fix debug message: miss cache file.
+  - fix scheme navigation with key.
+  - update image.
 
 * 3.0: 
 
@@ -212,3 +226,4 @@ Anyone willing to help can contact me, for now.
 
 .. _Vundle: https://www.github.com/gmarik/vundle
 .. _Galaxy: https://www.github.com/Rykka/galaxy.vim
+.. _webapi.vim: https://github.com/mattn/webapi-vim 
